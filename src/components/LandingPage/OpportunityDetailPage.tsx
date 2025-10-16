@@ -1,133 +1,308 @@
 "use client"
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import api from '../axios/axiosInsatance';
 
 function OpportunityDetailPage() {
   const [showApplicationForm, setShowApplicationForm] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [campaignData, setCampaignData] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
+  // Form data matching the Django Applicant and Application models
   const [formData, setFormData] = useState({
-    fullName: '',
+    // Applicant fields
+    full_name: '',
     email: '',
-    phone: '',
+    phone_number: '',
+    location: '',
+    passport_number: '',
+    nationality: '',
+    id_card: '',
+    card_image_front: null,
+    card_image_back: null,
+    date_of_birth: '',
+    profile_photo: null,
+    bio: '',
+    linkedin_profile: '',
+    website_or_portfolio: '',
+    languages_spoken: '',
+    education: '',
+    
+    // Application fields
     resume: null,
-    coverLetter: '',
-    experience: '',
-    qualifications: ''
+    certification: null,
+    cover_letter: '',
+    available_start_date: '',
+    qualification: ''
   });
 
-  // Sample opportunity data - in real app, this would come from props or API
-  const opportunity = {
-    id: 7,
-    title: "Registered Nurse - ICU Specialist",
-    type: "Nursing Job",
-    location: "London, UK",
-    duration: "Full-time",
-    salary: "£45,000 - £55,000",
-    deadline: "2024-03-20",
-    company: "Royal London Hospital",
-    companyLogo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1460&q=80",
+  const searchParams = useSearchParams();
+  const campaignId = searchParams.get('campaign_id');
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!campaignId) {
+        console.error('No campaign ID provided');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const response = await api.get(`/compaign/details/${campaignId}`);
+        setCampaignData(response);
+      } catch (error) {
+        console.error('Error fetching campaign data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [campaignId]);
+
+  // Helper function to get full image URL
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return '';
+    if (imagePath.startsWith('http')) return imagePath;
+    return `http://127.0.0.1:8000${imagePath}`;
+  };
+
+  // Use actual data if available, otherwise use fallback
+  const opportunity = campaignData ? {
+    id: campaignData.campaign?.id,
+    title: campaignData.campaign?.title || "Opportunity Title",
+    type: campaignData.campaign?.employment_type || "Full-time",
+    location: `${campaignData.campaign?.city}, ${campaignData.campaign?.state}` || campaignData.campaign?.location,
+    duration: campaignData.campaign?.duration || "Permanent",
+    salary: "Competitive Salary",
+    deadline: "2024-12-31",
+    company: campaignData.campaign?.title,
+    companyLogo: getImageUrl(campaignData.campaign?.image),
     
-    images: [
-      "https://images.unsplash.com/photo-1551601651-2a8555f1a136?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
-      "https://images.unsplash.com/photo-1582750433449-648ed127bb54?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1467&q=80",
-      "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
-      "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1471&q=80"
+    images: campaignData.gallery?.map(item => getImageUrl(item.image)) || [
+      getImageUrl(campaignData.campaign?.image)
     ],
     
-    description: "Join our state-of-the-art intensive care unit at Royal London Hospital, where you'll work with cutting-edge medical technology and receive comprehensive training programs. This position offers the opportunity to work in one of the UK's leading healthcare facilities with a dedicated team of healthcare professionals.",
+    description: campaignData.campaign?.description || "Join our team for an exciting opportunity.",
     
-    fullDescription: `
-      As an ICU Specialist Nurse at Royal London Hospital, you will be at the forefront of critical care medicine. Our 30-bed intensive care unit serves a diverse patient population with complex medical needs. You'll work alongside a multidisciplinary team including consultants, physiotherapists, and other healthcare professionals to deliver exceptional patient care.
-
-      Key aspects of this role include:
-      • Managing critically ill patients requiring advanced life support
-      • Utilizing state-of-the-art monitoring and life support equipment
-      • Participating in clinical research and quality improvement initiatives
-      • Mentoring junior staff and nursing students
-      • Collaborating with the rapid response team for hospital-wide emergencies
-
-      We are committed to your professional development and offer:
-      • Comprehensive orientation program
-      • Regular in-service training and workshops
-      • Opportunities for advanced certification in critical care
-      • Support for further education and specialization
-      • Career progression pathways to senior nursing roles
+    fullDescription: campaignData.compaign_benefits?.[0]?.full_description || campaignData.campaign?.description || `
+      This position offers great opportunities for professional growth and development.
+      Join our dedicated team and make a difference in healthcare.
     `,
     
-    requirements: [
-      "Valid NMC registration",
-      "Bachelor of Science in Nursing (BSN) or equivalent",
-      "Minimum 2 years of ICU experience",
-      "Advanced Cardiac Life Support (ACLS) certification",
-      "Pediatric Advanced Life Support (PALS) preferred",
-      "Excellent communication and teamwork skills",
-      "Ability to work in high-pressure environments"
+    requirements: campaignData.compaign_benefits?.[0]?.requirements || [
+      "Relevant qualifications and experience",
+      "Strong communication skills",
+      "Team player mentality"
     ],
     
-    responsibilities: [
-      "Provide comprehensive nursing care to critically ill patients",
-      "Monitor and interpret patient vital signs and diagnostic data",
-      "Administer medications and treatments as prescribed",
-      "Operate and maintain specialized ICU equipment",
-      "Collaborate with multidisciplinary healthcare team",
-      "Educate patients and families about care plans",
-      "Maintain accurate patient records and documentation",
-      "Participate in emergency response and code blue situations"
+    responsibilities: campaignData.compaign_benefits?.[0]?.responsibilities || [
+      "Perform duties as required",
+      "Collaborate with team members",
+      "Maintain professional standards"
     ],
     
-    benefits: [
-      "Competitive salary package with London weighting",
-      "Comprehensive health insurance including dental and vision",
-      "Generous annual leave allowance (35 days including bank holidays)",
-      "NHS pension scheme with employer contributions",
-      "Professional development and training opportunities",
-      "Relocation assistance for eligible candidates",
-      "Subsidized accommodation options",
-      "Free on-site fitness center and wellness programs",
-      "Cycle to work scheme",
-      "Employee assistance program",
-      "Opportunities for international rotations",
-      "Research and publication support"
+    benefits: campaignData.compaign_benefits?.[0]?.benefit || [
+      "Competitive compensation",
+      "Professional development",
+      "Great work environment"
     ],
     
     applicationProcess: [
-      "Submit online application with CV",
-      "Initial phone screening (15-20 minutes)",
-      "Technical interview with nursing managers",
-      "Practical assessment and scenario testing",
-      "Final interview with department head",
-      "Reference checks and background verification",
-      "Job offer and onboarding process"
+      "Submit online application",
+      "Initial screening",
+      "Interview process",
+      "Offer and onboarding"
     ]
+  } : {
+    // Fallback data while loading or if no data
+    id: 7,
+    title: "Loading...",
+    type: "Loading...",
+    location: "Loading...",
+    duration: "Loading...",
+    salary: "Loading...",
+    deadline: "2024-12-31",
+    company: "Loading...",
+    companyLogo: "",
+    images: [],
+    description: "Loading...",
+    fullDescription: "Loading...",
+    requirements: ["Loading..."],
+    responsibilities: ["Loading..."],
+    benefits: ["Loading..."],
+    applicationProcess: ["Loading..."]
   };
 
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
-    if (name === 'resume') {
-      setFormData(prev => ({ ...prev, resume: files[0] }));
+    
+    if (files) {
+      setFormData(prev => ({ ...prev, [name]: files[0] }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
-  const handleSubmitApplication = (e) => {
+  const handleFileUpload = (e, fieldName) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData(prev => ({ ...prev, [fieldName]: file }));
+    }
+  };
+
+  const validateForm = () => {
+    const requiredFields = [
+      'full_name', 'email', 'phone_number', 'location', 
+      'passport_number', 'nationality', 'id_card', 'resume'
+    ];
+
+    for (const field of requiredFields) {
+      if (!formData[field]) {
+        setSubmitError(`Please fill in the ${field.replace('_', ' ')} field`);
+        return false;
+      }
+    }
+
+    // Validate file types
+    const resumeFile = formData.resume;
+    if (resumeFile && !['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(resumeFile.type)) {
+      setSubmitError('Resume must be a PDF or Word document');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmitApplication = async (e) => {
     e.preventDefault();
-    // Handle form submission logic here
-    console.log('Application submitted:', formData);
-    setShowApplicationForm(false);
-    // Reset form
+    setSubmitError('');
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    if (!campaignId) {
+      setSubmitError('No campaign selected');
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      // Create FormData for file uploads
+      const submitData = new FormData();
+      
+      // Add all form fields to FormData
+      Object.keys(formData).forEach(key => {
+        if (formData[key] !== null && formData[key] !== '') {
+          submitData.append(key, formData[key]);
+        }
+      });
+
+      // Add campaign ID
+      submitData.append('campaign', campaignId);
+
+      // Submit application to your endpoint
+      const response = await api.post('/applications/create/', submitData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.status === 201 || response.status === 200) {
+        setSubmitSuccess(true);
+        setShowApplicationForm(false);
+        resetForm();
+      } else {
+        throw new Error('Failed to submit application');
+      }
+    } catch (error) {
+      console.error('Error submitting application:', error);
+      setSubmitError(error.response?.data?.message || 'Failed to submit application. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const resetForm = () => {
     setFormData({
-      fullName: '',
+      full_name: '',
       email: '',
-      phone: '',
+      phone_number: '',
+      location: '',
+      passport_number: '',
+      nationality: '',
+      id_card: '',
+      card_image_front: null,
+      card_image_back: null,
+      date_of_birth: '',
+      profile_photo: null,
+      bio: '',
+      linkedin_profile: '',
+      website_or_portfolio: '',
+      languages_spoken: '',
+      education: '',
       resume: null,
-      coverLetter: '',
-      experience: '',
-      qualifications: ''
+      certification: null,
+      cover_letter: '',
+      available_start_date: '',
+      qualification: ''
     });
   };
 
+  const formatFieldName = (fieldName) => {
+    return fieldName.split('_').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-800 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading opportunity details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!campaignId) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Campaign Not Found</h2>
+          <p className="text-gray-600">No campaign ID provided. Please go back and select an opportunity.</p>
+          <button 
+            onClick={() => window.history.back()} 
+            className="mt-4 bg-blue-800 text-white px-6 py-3 rounded-full font-semibold hover:bg-blue-700 transition-colors duration-300"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Success Notification */}
+      {submitSuccess && (
+        <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+          <div className="flex items-center">
+            <i className="fas fa-check-circle mr-2"></i>
+            Application submitted successfully!
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4">
@@ -137,7 +312,10 @@ function OpportunityDetailPage() {
               DreamExplore
             </a>
             <div className="flex items-center space-x-4">
-              <button className="text-gray-600 hover:text-blue-800 transition-colors duration-300">
+              <button 
+                onClick={() => window.history.back()}
+                className="text-gray-600 hover:text-blue-800 transition-colors duration-300 flex items-center"
+              >
                 <i className="fas fa-arrow-left mr-2"></i>
                 Back to Opportunities
               </button>
@@ -154,52 +332,62 @@ function OpportunityDetailPage() {
             {/* Main Image Gallery */}
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
               <div className="relative h-96 overflow-hidden">
-                <img 
-                  src={opportunity.images[selectedImage]}
-                  alt={opportunity.title}
-                  className="w-full h-full object-cover"
-                />
+                {opportunity.images.length > 0 ? (
+                  <img 
+                    src={opportunity.images[selectedImage]}
+                    alt={opportunity.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                    <i className="fas fa-image text-gray-400 text-6xl"></i>
+                  </div>
+                )}
                 <div className="absolute bottom-4 left-4 bg-blue-800 text-white px-3 py-1 rounded-full text-sm font-semibold">
                   {opportunity.type}
                 </div>
               </div>
               
               {/* Thumbnail Gallery */}
-              <div className="p-4 bg-gray-50">
-                <div className="grid grid-cols-4 gap-2">
-                  {opportunity.images.map((image, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setSelectedImage(index)}
-                      className={`relative h-20 rounded-lg overflow-hidden border-2 transition-all duration-300 ${
-                        selectedImage === index ? 'border-blue-600' : 'border-transparent'
-                      }`}
-                    >
-                      <img 
-                        src={image} 
-                        alt={`Thumbnail ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                      {selectedImage === index && (
-                        <div className="absolute inset-0 bg-blue-600 bg-opacity-20"></div>
-                      )}
-                    </button>
-                  ))}
+              {opportunity.images.length > 1 && (
+                <div className="p-4 bg-gray-50">
+                  <div className="grid grid-cols-4 gap-2">
+                    {opportunity.images.map((image, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedImage(index)}
+                        className={`relative h-20 rounded-lg overflow-hidden border-2 transition-all duration-300 ${
+                          selectedImage === index ? 'border-blue-600' : 'border-transparent'
+                        }`}
+                      >
+                        <img 
+                          src={image} 
+                          alt={`Thumbnail ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        {selectedImage === index && (
+                          <div className="absolute inset-0 bg-blue-600 bg-opacity-20"></div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Company Info */}
             <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
               <div className="flex items-center space-x-4">
-                <img 
-                  src={opportunity.companyLogo} 
-                  alt={opportunity.company}
-                  className="w-16 h-16 rounded-full object-cover"
-                />
+                {opportunity.companyLogo && (
+                  <img 
+                    src={opportunity.companyLogo} 
+                    alt={opportunity.company}
+                    className="w-16 h-16 rounded-full object-cover"
+                  />
+                )}
                 <div>
                   <h3 className="text-xl font-bold text-gray-800">{opportunity.company}</h3>
-                  <p className="text-gray-600">Leading Healthcare Provider</p>
+                  <p className="text-gray-600">{campaignData.campaign?.category.name} </p>
                 </div>
               </div>
             </div>
@@ -306,8 +494,8 @@ function OpportunityDetailPage() {
       {/* Application Form Modal */}
       {showApplicationForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-800">Apply for {opportunity.title}</h2>
                 <button 
@@ -318,125 +506,357 @@ function OpportunityDetailPage() {
                 </button>
               </div>
               <p className="text-gray-600 mt-2">{opportunity.company} • {opportunity.location}</p>
+              
+              {submitError && (
+                <div className="mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                  <i className="fas fa-exclamation-triangle mr-2"></i>
+                  {submitError}
+                </div>
+              )}
             </div>
 
             <form onSubmit={handleSubmitApplication} className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Full Name *
-                  </label>
-                  <input
-                    type="text"
-                    name="fullName"
-                    value={formData.fullName}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                    placeholder="Enter your full name"
-                  />
-                </div>
+              {/* Personal Information Section */}
+              <div className="mb-8">
+                <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Personal Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Full Name *
+                    </label>
+                    <input
+                      type="text"
+                      name="full_name"
+                      value={formData.full_name}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      placeholder="Enter your full name"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                    placeholder="Enter your email"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      placeholder="Enter your email"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone Number *
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                    placeholder="Enter your phone number"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Phone Number *
+                    </label>
+                    <input
+                      type="tel"
+                      name="phone_number"
+                      value={formData.phone_number}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Upload Resume *
-                  </label>
-                  <input
-                    type="file"
-                    name="resume"
-                    onChange={handleInputChange}
-                    required
-                    accept=".pdf,.doc,.docx"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Location *
+                    </label>
+                    <input
+                      type="text"
+                      name="location"
+                      value={formData.location}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      placeholder="Enter your location"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Passport Number *
+                    </label>
+                    <input
+                      type="text"
+                      name="passport_number"
+                      value={formData.passport_number}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      placeholder="Enter passport number"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nationality *
+                    </label>
+                    <input
+                      type="text"
+                      name="nationality"
+                      value={formData.nationality}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      placeholder="Enter your nationality"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      ID Card Number *
+                    </label>
+                    <input
+                      type="text"
+                      name="id_card"
+                      value={formData.id_card}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      placeholder="Enter ID card number"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Date of Birth
+                    </label>
+                    <input
+                      type="date"
+                      name="date_of_birth"
+                      value={formData.date_of_birth}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cover Letter
-                </label>
-                <textarea
-                  name="coverLetter"
-                  value={formData.coverLetter}
-                  onChange={handleInputChange}
-                  rows="4"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                  placeholder="Tell us why you're interested in this position..."
-                />
+              {/* Document Uploads Section */}
+              <div className="mb-8">
+                <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Documents & Files</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Resume/CV *
+                    </label>
+                    <input
+                      type="file"
+                      name="resume"
+                      onChange={(e) => handleFileUpload(e, 'resume')}
+                      required
+                      accept=".pdf,.doc,.docx"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">PDF, DOC, DOCX files only</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Certifications (Optional)
+                    </label>
+                    <input
+                      type="file"
+                      name="certification"
+                      onChange={(e) => handleFileUpload(e, 'certification')}
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      ID Card Front *
+                    </label>
+                    <input
+                      type="file"
+                      name="card_image_front"
+                      onChange={(e) => handleFileUpload(e, 'card_image_front')}
+                      required
+                      accept=".jpg,.jpeg,.png"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      ID Card Back *
+                    </label>
+                    <input
+                      type="file"
+                      name="card_image_back"
+                      onChange={(e) => handleFileUpload(e, 'card_image_back')}
+                      required
+                      accept=".jpg,.jpeg,.png"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Profile Photo (Optional)
+                    </label>
+                    <input
+                      type="file"
+                      name="profile_photo"
+                      onChange={(e) => handleFileUpload(e, 'profile_photo')}
+                      accept=".jpg,.jpeg,.png"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Relevant Experience
-                </label>
-                <textarea
-                  name="experience"
-                  value={formData.experience}
-                  onChange={handleInputChange}
-                  rows="3"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                  placeholder="Describe your relevant experience..."
-                />
+              {/* Additional Information Section */}
+              <div className="mb-8">
+                <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Additional Information</h3>
+                <div className="grid grid-cols-1 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Bio
+                    </label>
+                    <textarea
+                      name="bio"
+                      value={formData.bio}
+                      onChange={handleInputChange}
+                      rows="3"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      placeholder="Brief summary about yourself..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Cover Letter
+                    </label>
+                    <textarea
+                      name="cover_letter"
+                      value={formData.cover_letter}
+                      onChange={handleInputChange}
+                      rows="4"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      placeholder="Tell us why you're interested in this position..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Qualifications
+                    </label>
+                    <textarea
+                      name="qualification"
+                      value={formData.qualification}
+                      onChange={handleInputChange}
+                      rows="3"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      placeholder="List your relevant qualifications..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Education
+                    </label>
+                    <textarea
+                      name="education"
+                      value={formData.education}
+                      onChange={handleInputChange}
+                      rows="3"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      placeholder="Your education background..."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        LinkedIn Profile
+                      </label>
+                      <input
+                        type="url"
+                        name="linkedin_profile"
+                        value={formData.linkedin_profile}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                        placeholder="https://linkedin.com/in/yourprofile"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Website/Portfolio
+                      </label>
+                      <input
+                        type="url"
+                        name="website_or_portfolio"
+                        value={formData.website_or_portfolio}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                        placeholder="https://yourportfolio.com"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Languages Spoken
+                      </label>
+                      <input
+                        type="text"
+                        name="languages_spoken"
+                        value={formData.languages_spoken}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                        placeholder="English, Spanish, French..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Available Start Date
+                      </label>
+                      <input
+                        type="date"
+                        name="available_start_date"
+                        value={formData.available_start_date}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Qualifications
-                </label>
-                <textarea
-                  name="qualifications"
-                  value={formData.qualifications}
-                  onChange={handleInputChange}
-                  rows="3"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                  placeholder="List your relevant qualifications..."
-                />
-              </div>
-
-              <div className="flex space-x-4">
+              {/* Submit Buttons */}
+              <div className="flex space-x-4 pt-4 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={() => setShowApplicationForm(false)}
                   className="flex-1 border-2 border-gray-300 text-gray-700 py-4 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-300"
+                  disabled={submitting}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-blue-800 to-blue-600 text-white py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                  disabled={submitting}
+                  className="flex-1 bg-gradient-to-r from-blue-800 to-blue-600 text-white py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Submit Application
+                  {submitting ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-2"></div>
+                      Submitting...
+                    </div>
+                  ) : (
+                    'Submit Application'
+                  )}
                 </button>
               </div>
             </form>
