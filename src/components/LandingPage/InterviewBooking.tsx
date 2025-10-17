@@ -1,83 +1,67 @@
 "use client"
 import React, { useState, useEffect } from 'react';
 
+// Define TypeScript interfaces
+interface Interview {
+  id: number;
+  jobTitle: string;
+  company: string;
+  interviewer: string;
+  date: string;
+  time: string;
+  duration: number;
+  type: string;
+  status: string;
+  description: string;
+  meetingLink?: string | null;
+}
+
+interface TimeSlots {
+  [key: string]: string[];
+}
+
+interface Tab {
+  id: string;
+  label: string;
+  icon: string;
+  count?: number;
+}
+
 function InterviewBooking() {
   const [activeTab, setActiveTab] = useState('schedule');
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedDuration, setSelectedDuration] = useState(30);
   const [interviewType, setInterviewType] = useState('video');
+  const [interviewDescription, setInterviewDescription] = useState('');
   const [bookingStep, setBookingStep] = useState(1);
-  const [upcomingInterviews, setUpcomingInterviews] = useState([]);
-  const [pastInterviews, setPastInterviews] = useState([]);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [upcomingInterviews, setUpcomingInterviews] = useState<Interview[]>([]);
+  const [pastInterviews, setPastInterviews] = useState<Interview[]>([]);
+  const [availableSlots, setAvailableSlots] = useState<TimeSlots>({});
 
-  // Sample data
-  const availableSlots = {
-    '2024-02-01': ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'],
-    '2024-02-02': ['09:30', '10:30', '11:30', '14:30', '15:30'],
-    '2024-02-05': ['08:00', '09:00', '10:00', '13:00', '14:00', '15:00', '16:00'],
-    '2024-02-06': ['09:00', '10:00', '11:00', '14:00', '15:00'],
-    '2024-02-07': ['08:30', '09:30', '10:30', '13:30', '14:30', '15:30']
+  // Generate available slots for all dates dynamically
+  const generateAvailableSlots = (): TimeSlots => {
+    const slots: TimeSlots = {};
+    const today = new Date();
+    
+    for (let i = 0; i < 14; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      const dateKey = date.toISOString().split('T')[0];
+      
+      // Generate random time slots for each date
+      slots[dateKey] = [
+        '09:00', '10:00', '11:00', 
+        '14:00', '15:00', '16:00'
+      ];
+    }
+    return slots;
   };
 
-  const interviewDurations = [
-    { value: 30, label: '30 min' },
-    { value: 45, label: '45 min' },
-    { value: 60, label: '1 hour' }
-  ];
-
-  const interviewTypes = [
-    { value: 'video', label: 'Video', icon: 'fas fa-video' },
-    { value: 'phone', label: 'Phone', icon: 'fas fa-phone' },
-    { value: 'in_person', label: 'In Person', icon: 'fas fa-building' }
-  ];
-
-  // Sample interviews data
-  const sampleInterviews = [
-    {
-      id: 1,
-      jobTitle: "Senior ICU Nurse",
-      company: "St. Thomas Hospital",
-      interviewer: "Dr. Sarah Mitchell",
-      interviewerEmail: "sarah.mitchell@stthomas.com",
-      interviewerPosition: "Head of Nursing",
-      date: "2024-02-01",
-      time: "14:00",
-      duration: 45,
-      type: "video",
-      status: "scheduled",
-      meetingLink: "https://meet.google.com/abc-def-ghi",
-      meetingId: "abc-def-ghi",
-      meetingPassword: "123456",
-      preparation: [
-        "Review your ICU experience",
-        "Prepare teamwork examples",
-        "Discuss patient care approach",
-        "Have questions ready"
-      ],
-      description: "Technical interview focusing on ICU nursing experience."
-    },
-    {
-      id: 2,
-      jobTitle: "Registered Nurse - ICU Specialist",
-      company: "Royal London Hospital",
-      interviewer: "Mr. James Wilson",
-      interviewerEmail: "j.wilson@royallondon.com",
-      interviewerPosition: "ICU Manager",
-      date: "2024-01-29",
-      time: "10:00",
-      duration: 60,
-      type: "video",
-      status: "completed",
-      meetingLink: "https://meet.google.com/xyz-uvw-rst",
-      feedback: "Excellent clinical knowledge and good communication skills.",
-      rating: 4.5,
-      notes: "Discussed ICU protocols and emergency response."
-    }
-  ];
-
   useEffect(() => {
+    // Initialize available slots when component mounts
+    setAvailableSlots(generateAvailableSlots());
+    
     const now = new Date();
     const upcoming = sampleInterviews.filter(interview => {
       const interviewDateTime = new Date(`${interview.date}T${interview.time}`);
@@ -92,8 +76,36 @@ function InterviewBooking() {
     setPastInterviews(past);
   }, []);
 
-  const getDaysOfWeek = () => {
-    const days = [];
+  const interviewTypes = [
+    { value: 'video', label: 'Video', icon: 'fas fa-video' },
+    { value: 'phone', label: 'Phone', icon: 'fas fa-phone' },
+    { value: 'in_person', label: 'In Person', icon: 'fas fa-building' }
+  ];
+
+  // Sample interviews data
+  const sampleInterviews: Interview[] = [
+    {
+      id: 1,
+      jobTitle: "Senior ICU Nurse",
+      company: "St. Thomas Hospital",
+      interviewer: "Dr. Sarah Mitchell",
+      date: "2024-02-01",
+      time: "14:00",
+      duration: 45,
+      type: "video",
+      status: "scheduled",
+      description: "Technical interview focusing on ICU nursing experience and patient care scenarios."
+    }
+  ];
+
+  const tabs: Tab[] = [
+    { id: 'schedule', label: 'Schedule', icon: 'fas fa-calendar-plus' },
+    { id: 'upcoming', label: 'Upcoming', icon: 'fas fa-clock', count: upcomingInterviews.length },
+    { id: 'past', label: 'Past', icon: 'fas fa-history' }
+  ];
+
+  const getDaysOfWeek = (): Date[] => {
+    const days: Date[] = [];
     const today = new Date();
     for (let i = 0; i < 14; i++) {
       const date = new Date(today);
@@ -103,49 +115,57 @@ function InterviewBooking() {
     return days;
   };
 
-  const handleDateSelect = (date) => {
-    const dateString = date.toISOString().split('T')[0];
-    setSelectedDate(dateString);
-    setSelectedTime('');
-    setBookingStep(2);
+  const formatDateKey = (date: Date): string => {
+    return date.toISOString().split('T')[0];
   };
 
-  const handleTimeSelect = (time) => {
+  const handleDateSelect = (date: Date) => {
+    const dateString = formatDateKey(date);
+    console.log('Selected date:', dateString);
+    setSelectedDate(dateString);
+  };
+
+  const handleTimeSelect = (time: string) => {
+    console.log('Selected time:', time);
     setSelectedTime(time);
-    setBookingStep(3);
+  };
+
+  const handleNextStep = () => {
+    if (bookingStep === 1 && selectedDate) {
+      setBookingStep(2);
+    } else if (bookingStep === 2 && selectedTime) {
+      setBookingStep(3);
+    } else if (bookingStep === 3 && interviewDescription.trim()) {
+      handleBookingConfirm();
+    }
+  };
+
+  const handleBackStep = () => {
+    if (bookingStep > 1) {
+      setBookingStep(bookingStep - 1);
+    }
   };
 
   const handleBookingConfirm = () => {
-    const newInterview = {
+    const newInterview: Interview = {
       id: upcomingInterviews.length + pastInterviews.length + 1,
-      jobTitle: "New Position",
-      company: "Hiring Company",
-      interviewer: "To be assigned",
+      jobTitle: "Senior ICU Nurse",
+      company: "St. Thomas Hospital",
+      interviewer: "Dr. Sarah Mitchell",
       date: selectedDate,
       time: selectedTime,
       duration: selectedDuration,
       type: interviewType,
+      description: interviewDescription,
       status: "scheduled",
       meetingLink: interviewType === 'video' ? "https://meet.google.com/new-meeting" : null,
-      description: `${selectedDuration}-minute ${interviewType} interview`
     };
 
     setUpcomingInterviews(prev => [newInterview, ...prev]);
     setBookingStep(4);
   };
 
-  const canJoinMeeting = (interview) => {
-    if (interview.type !== 'video') return false;
-    
-    const interviewDateTime = new Date(`${interview.date}T${interview.time}`);
-    const now = new Date();
-    const timeDiff = interviewDateTime.getTime() - now.getTime();
-    const minutesUntilInterview = timeDiff / (1000 * 60);
-    
-    return minutesUntilInterview <= 5 && minutesUntilInterview > -30;
-  };
-
-  const formatDate = (dateString) => {
+  const formatDisplayDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString('en-US', {
       weekday: 'short',
       month: 'short',
@@ -153,7 +173,7 @@ function InterviewBooking() {
     });
   };
 
-  const formatTime = (timeString) => {
+  const formatTime = (timeString: string): string => {
     return new Date(`2000-01-01T${timeString}`).toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
@@ -161,44 +181,17 @@ function InterviewBooking() {
     });
   };
 
-  const isToday = (dateString) => {
-    const today = new Date().toDateString();
-    return new Date(dateString).toDateString() === today;
-  };
-
-  const isTomorrow = (dateString) => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return new Date(dateString).toDateString() === tomorrow.toDateString();
-  };
-
-  // Mobile tab navigation
-  const tabs = [
-    { id: 'schedule', label: 'Schedule', icon: 'fas fa-calendar-plus' },
-    { id: 'upcoming', label: 'Upcoming', icon: 'fas fa-clock', count: upcomingInterviews.length },
-    { id: 'past', label: 'Past', icon: 'fas fa-history' }
-  ];
-
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-40">
         <div className="container mx-auto px-4">
           <nav className="flex justify-between items-center py-4">
-            <a href="#" className="flex items-center text-xl font-bold text-blue-800">
+            <div className="flex items-center text-xl font-bold text-blue-800">
               <i className="fas fa-globe-americas mr-2"></i>
-              <span className="hidden sm:inline">DreamExplore</span>
-              <span className="sm:hidden">DE</span>
-            </a>
-            
-            {/* Desktop Button */}
-            <button className="hidden sm:block bg-gradient-to-r from-blue-800 to-blue-600 text-white px-4 py-2 rounded-full font-semibold shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-sm">
+              <span>DreamExplore</span>
+            </div>
+            <button className="bg-blue-600 text-white px-4 py-2 rounded-full font-semibold">
               Back to Dashboard
-            </button>
-
-            {/* Mobile Button */}
-            <button className="sm:hidden bg-blue-600 text-white px-3 py-2 rounded-full font-semibold text-sm">
-              <i className="fas fa-arrow-left"></i>
             </button>
           </nav>
         </div>
@@ -206,46 +199,15 @@ function InterviewBooking() {
 
       <div className="container mx-auto px-4 py-4">
         <div className="max-w-6xl mx-auto">
-          {/* Header Section */}
           <div className="text-center mb-6">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
               Interview Scheduling
             </h1>
-            <p className="text-gray-600 text-sm sm:text-base max-w-2xl mx-auto">
-              Book interviews and join meetings seamlessly
-            </p>
+            <p className="text-gray-600">Book interviews and join meetings seamlessly</p>
           </div>
 
-          {/* Mobile Navigation Tabs */}
-          <div className="sm:hidden bg-white rounded-2xl shadow-lg mb-6">
+          <div className="bg-white rounded-2xl shadow-lg mb-6">
             <div className="flex">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 min-w-0 py-3 px-2 text-center transition-all duration-300 ${
-                    activeTab === tab.id
-                      ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-                      : 'text-gray-600 hover:text-blue-600'
-                  }`}
-                >
-                  <i className={`${tab.icon} text-sm mb-1 block`}></i>
-                  <span className="text-xs font-medium">
-                    {tab.label}
-                    {tab.count > 0 && (
-                      <span className="ml-1 bg-blue-600 text-white rounded-full w-4 h-4 text-xs inline-flex items-center justify-center">
-                        {tab.count}
-                      </span>
-                    )}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Desktop Navigation Tabs */}
-          <div className="hidden sm:block bg-white rounded-2xl shadow-lg mb-6">
-            <div className="flex border-b border-gray-200">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
@@ -257,7 +219,7 @@ function InterviewBooking() {
                   }`}
                 >
                   {tab.label}
-                  {tab.count > 0 && (
+                  {tab.count && tab.count > 0 && (
                     <span className="ml-2 bg-blue-600 text-white rounded-full px-2 py-1 text-xs">
                       {tab.count}
                     </span>
@@ -267,35 +229,11 @@ function InterviewBooking() {
             </div>
           </div>
 
-          {/* Tab Content */}
           {activeTab === 'schedule' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-              {/* Booking Steps */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
-                <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
-                  {/* Progress Steps - Mobile */}
-                  <div className="sm:hidden flex justify-between mb-6">
-                    {[1, 2, 3, 4].map((step) => (
-                      <div key={step} className="flex flex-col items-center">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
-                          step === bookingStep
-                            ? 'bg-blue-600 border-blue-600 text-white'
-                            : step < bookingStep
-                            ? 'bg-green-500 border-green-500 text-white'
-                            : 'border-gray-300 text-gray-400'
-                        }`}>
-                          {step < bookingStep ? (
-                            <i className="fas fa-check text-xs"></i>
-                          ) : (
-                            <span className="text-xs font-semibold">{step}</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Progress Steps - Desktop */}
-                  <div className="hidden sm:flex justify-between mb-8">
+                <div className="bg-white rounded-2xl shadow-lg p-6">
+                  <div className="flex justify-between mb-8">
                     {[1, 2, 3, 4].map((step) => (
                       <div key={step} className="flex flex-col items-center">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${
@@ -311,7 +249,7 @@ function InterviewBooking() {
                             <span className="text-sm font-semibold">{step}</span>
                           )}
                         </div>
-                        <span className="text-xs mt-2 text-gray-600 text-center hidden sm:block">
+                        <span className="text-xs mt-2 text-gray-600">
                           {step === 1 && 'Select Date'}
                           {step === 2 && 'Select Time'}
                           {step === 3 && 'Confirm'}
@@ -324,44 +262,52 @@ function InterviewBooking() {
                   {/* Step 1: Select Date */}
                   {bookingStep === 1 && (
                     <div>
-                      <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-4">Select a Date</h3>
-                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2 sm:gap-3">
+                      <h3 className="text-xl font-bold text-gray-800 mb-4">Select a Date</h3>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-6">
                         {getDaysOfWeek().map((date, index) => {
-                          const dateString = date.toISOString().split('T')[0];
-                          const isAvailable = availableSlots[dateString];
-                          const isSelected = selectedDate === dateString;
+                          const dateKey = formatDateKey(date);
+                          const isSelected = selectedDate === dateKey;
                           
                           return (
                             <button
                               key={index}
-                              onClick={() => isAvailable && handleDateSelect(date)}
-                              disabled={!isAvailable}
-                              className={`p-2 sm:p-3 rounded-lg border-2 text-center transition-all duration-300 ${
+                              onClick={() => handleDateSelect(date)}
+                              className={`p-3 rounded-lg border-2 text-center transition-all duration-300 ${
                                 isSelected
-                                  ? 'border-blue-600 bg-blue-50 text-blue-700'
-                                  : isAvailable
-                                  ? 'border-gray-200 hover:border-blue-400 hover:shadow-md text-gray-700'
-                                  : 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed'
+                                  ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-md'
+                                  : 'border-gray-200 hover:border-blue-400 hover:shadow-md text-gray-700 bg-white'
                               }`}
                             >
                               <div className="text-xs font-semibold">
                                 {date.toLocaleDateString('en-US', { weekday: 'short' })}
                               </div>
-                              <div className="text-sm sm:text-base font-bold mt-1">
+                              <div className="text-base font-bold mt-1">
                                 {date.getDate()}
                               </div>
-                              <div className="text-xs mt-1 hidden sm:block">
+                              <div className="text-xs mt-1">
                                 {date.toLocaleDateString('en-US', { month: 'short' })}
                               </div>
-                              {isAvailable && (
-                                <div className="text-xs text-green-600 mt-1 hidden sm:block">
-                                  <i className="fas fa-check-circle mr-1"></i>
-                                  Available
-                                </div>
-                              )}
+                              <div className="text-xs text-green-600 mt-1">
+                                <i className="fas fa-check-circle mr-1"></i>
+                                Available
+                              </div>
                             </button>
                           );
                         })}
+                      </div>
+                      
+                      <div className="flex justify-end">
+                        <button
+                          onClick={handleNextStep}
+                          disabled={!selectedDate}
+                          className={`px-6 py-3 rounded-xl font-semibold ${
+                            selectedDate
+                              ? 'bg-blue-600 text-white hover:bg-blue-700'
+                              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          }`}
+                        >
+                          Next: Select Time
+                        </button>
                       </div>
                     </div>
                   )}
@@ -370,36 +316,56 @@ function InterviewBooking() {
                   {bookingStep === 2 && (
                     <div>
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-800">Select a Time</h3>
+                        <h3 className="text-xl font-bold text-gray-800">Select a Time</h3>
                         <button
-                          onClick={() => setBookingStep(1)}
-                          className="text-blue-600 hover:text-blue-800 font-semibold text-sm"
+                          onClick={handleBackStep}
+                          className="text-blue-600 hover:text-blue-800 font-semibold"
                         >
                           <i className="fas fa-arrow-left mr-1"></i>
-                          Back
+                          Back to Dates
                         </button>
                       </div>
                       
-                      <div className="mb-4">
-                        <h4 className="font-semibold text-gray-700 mb-3 text-sm sm:text-base">
-                          {formatDate(selectedDate)}
+                      <div className="mb-6">
+                        <h4 className="font-semibold text-gray-700 mb-4 text-lg">
+                          {formatDisplayDate(selectedDate)}
                         </h4>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                           {availableSlots[selectedDate]?.map((time, index) => (
                             <button
                               key={index}
                               onClick={() => handleTimeSelect(time)}
-                              className={`p-3 sm:p-4 rounded-lg border-2 text-center transition-all duration-300 ${
+                              className={`p-4 rounded-lg border-2 text-center transition-all duration-300 ${
                                 selectedTime === time
-                                  ? 'border-blue-600 bg-blue-50 text-blue-700'
+                                  ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-md'
                                   : 'border-gray-200 hover:border-blue-400 hover:shadow-md text-gray-700'
                               }`}
                             >
-                              <div className="font-semibold text-sm sm:text-base">{time}</div>
-                              <div className="text-xs text-gray-500 mt-1 hidden sm:block">Available</div>
+                              <div className="font-semibold text-base">{formatTime(time)}</div>
+                              <div className="text-xs text-gray-500 mt-1">Available</div>
                             </button>
                           ))}
                         </div>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <button
+                          onClick={handleBackStep}
+                          className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50"
+                        >
+                          Back
+                        </button>
+                        <button
+                          onClick={handleNextStep}
+                          disabled={!selectedTime}
+                          className={`px-6 py-3 rounded-xl font-semibold ${
+                            selectedTime
+                              ? 'bg-blue-600 text-white hover:bg-blue-700'
+                              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          }`}
+                        >
+                          Next: Confirm Details
+                        </button>
                       </div>
                     </div>
                   )}
@@ -408,39 +374,39 @@ function InterviewBooking() {
                   {bookingStep === 3 && (
                     <div>
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-800">Confirm Details</h3>
+                        <h3 className="text-xl font-bold text-gray-800">Confirm Details</h3>
                         <button
-                          onClick={() => setBookingStep(2)}
-                          className="text-blue-600 hover:text-blue-800 font-semibold text-sm"
+                          onClick={handleBackStep}
+                          className="text-blue-600 hover:text-blue-800 font-semibold"
                         >
                           <i className="fas fa-arrow-left mr-1"></i>
-                          Back
+                          Back to Time
                         </button>
                       </div>
 
-                      <div className="bg-gray-50 rounded-xl p-4 mb-4">
-                        <div className="space-y-4">
+                      <div className="bg-gray-50 rounded-xl p-6 mb-6">
+                        <div className="space-y-6">
                           <div>
-                            <h4 className="font-semibold text-gray-700 mb-2 text-sm">Interview Details</h4>
-                            <div className="space-y-2 text-sm">
+                            <h4 className="font-semibold text-gray-700 mb-3 text-lg">Interview Details</h4>
+                            <div className="space-y-3 text-base">
                               <div className="flex justify-between">
                                 <span className="text-gray-600">Date:</span>
-                                <span className="font-semibold">{formatDate(selectedDate)}</span>
+                                <span className="font-semibold">{formatDisplayDate(selectedDate)}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span className="text-gray-600">Time:</span>
-                                <span className="font-semibold">{selectedTime}</span>
+                                <span className="font-semibold">{formatTime(selectedTime)}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span className="text-gray-600">Duration:</span>
-                                <span className="font-semibold">{selectedDuration} min</span>
+                                <span className="font-semibold">{selectedDuration} minutes</span>
                               </div>
                             </div>
                           </div>
                           
                           <div>
-                            <h4 className="font-semibold text-gray-700 mb-2 text-sm">Interview Type</h4>
-                            <div className="space-y-2">
+                            <h4 className="font-semibold text-gray-700 mb-3 text-lg">Interview Type</h4>
+                            <div className="space-y-3">
                               {interviewTypes.map((type) => (
                                 <label key={type.value} className="flex items-center space-x-3 cursor-pointer">
                                   <input
@@ -451,21 +417,49 @@ function InterviewBooking() {
                                     onChange={(e) => setInterviewType(e.target.value)}
                                     className="text-blue-600 focus:ring-blue-500"
                                   />
-                                  <i className={`${type.icon} text-gray-600 text-sm`}></i>
-                                  <span className="text-sm font-medium text-gray-700">{type.label}</span>
+                                  <i className={`${type.icon} text-gray-600`}></i>
+                                  <span className="font-medium text-gray-700">{type.label}</span>
                                 </label>
                               ))}
+                            </div>
+                          </div>
+
+                          {/* REQUIRED Description Field */}
+                          <div>
+                            <h4 className="font-semibold text-gray-700 mb-3 text-lg">
+                              Interview Description <span className="text-red-500">*</span>
+                            </h4>
+                            <div className="space-y-2">
+                              <textarea
+                                value={interviewDescription}
+                                onChange={(e) => setInterviewDescription(e.target.value)}
+                                placeholder="Please describe the purpose of this interview, topics to be discussed, or any specific preparation needed..."
+                                className="w-full h-32 p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                required
+                              />
+                              {!interviewDescription.trim() && (
+                                <p className="text-red-500 text-sm flex items-center">
+                                  <i className="fas fa-exclamation-circle mr-1"></i>
+                                  Description is required to confirm booking
+                                </p>
+                              )}
+                              {interviewDescription.trim() && (
+                                <p className="text-green-500 text-sm flex items-center">
+                                  <i className="fas fa-check-circle mr-1"></i>
+                                  Description provided
+                                </p>
+                              )}
                             </div>
                           </div>
                         </div>
 
                         {interviewType === 'video' && (
-                          <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
                             <div className="flex items-center">
-                              <i className="fas fa-video text-blue-600 mr-2 text-sm"></i>
+                              <i className="fas fa-video text-blue-600 mr-3 text-base"></i>
                               <div>
-                                <div className="font-semibold text-blue-800 text-sm">Video Call</div>
-                                <div className="text-xs text-blue-700">
+                                <div className="font-semibold text-blue-800 text-base">Video Call</div>
+                                <div className="text-sm text-blue-700">
                                   Google Meet link will be sent to your email
                                 </div>
                               </div>
@@ -474,16 +468,21 @@ function InterviewBooking() {
                         )}
                       </div>
 
-                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                      <div className="flex justify-between">
                         <button
-                          onClick={() => setBookingStep(2)}
-                          className="flex-1 px-4 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors duration-300 text-sm"
+                          onClick={handleBackStep}
+                          className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50"
                         >
                           Back
                         </button>
                         <button
-                          onClick={handleBookingConfirm}
-                          className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-300 font-semibold text-sm"
+                          onClick={handleNextStep}
+                          disabled={!interviewDescription.trim()}
+                          className={`px-6 py-3 rounded-xl font-semibold ${
+                            interviewDescription.trim()
+                              ? 'bg-blue-600 text-white hover:bg-blue-700'
+                              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          }`}
                         >
                           Confirm Booking
                         </button>
@@ -491,44 +490,57 @@ function InterviewBooking() {
                     </div>
                   )}
 
-                  {/* Step 4: Booking Confirmed */}
+                  {/* Step 4: Success Message */}
                   {bookingStep === 4 && (
-                    <div className="text-center py-6">
-                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i className="fas fa-check text-green-600 text-xl"></i>
+                    <div className="text-center py-8">
+                      <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i className="fas fa-check text-green-600 text-2xl"></i>
                       </div>
-                      <h3 className="text-xl font-bold text-gray-800 mb-3">Interview Scheduled!</h3>
-                      <p className="text-gray-600 mb-4 text-sm">
-                        Your interview is scheduled for {formatDate(selectedDate)} at {selectedTime}
+                      <h3 className="text-2xl font-bold text-gray-800 mb-4">Interview Scheduled Successfully!</h3>
+                      <p className="text-gray-600 mb-6 text-lg">
+                        Your interview has been booked for {formatDisplayDate(selectedDate)} at {formatTime(selectedTime)}
                       </p>
-                      <div className="bg-gray-50 rounded-xl p-4 mb-4 max-w-md mx-auto">
-                        <div className="text-sm space-y-2">
+                      <div className="bg-gray-50 rounded-xl p-6 mb-6 max-w-md mx-auto">
+                        <div className="text-base space-y-3 text-left">
                           <div className="flex justify-between">
                             <span className="text-gray-600">Date:</span>
-                            <span className="font-semibold">{formatDate(selectedDate)}</span>
+                            <span className="font-semibold">{formatDisplayDate(selectedDate)}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-600">Time:</span>
-                            <span className="font-semibold">{selectedTime}</span>
+                            <span className="font-semibold">{formatTime(selectedTime)}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-600">Type:</span>
                             <span className="font-semibold capitalize">{interviewType.replace('_', ' ')}</span>
                           </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Duration:</span>
+                            <span className="font-semibold">{selectedDuration} minutes</span>
+                          </div>
+                          <div className="border-t pt-3 mt-3">
+                            <div className="text-gray-600 mb-1">Description:</div>
+                            <div className="font-semibold text-gray-800">{interviewDescription}</div>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                      <div className="flex flex-col sm:flex-row gap-3 justify-center">
                         <button
-                          onClick={() => setBookingStep(1)}
-                          className="flex-1 px-4 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors duration-300 text-sm"
+                          onClick={() => {
+                            setBookingStep(1);
+                            setSelectedDate('');
+                            setSelectedTime('');
+                            setInterviewDescription('');
+                          }}
+                          className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50"
                         >
-                          Schedule Another
+                          Schedule Another Interview
                         </button>
                         <button
                           onClick={() => setActiveTab('upcoming')}
-                          className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-300 text-sm"
+                          className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
                         >
-                          View Upcoming
+                          View Upcoming Interviews
                         </button>
                       </div>
                     </div>
@@ -536,8 +548,7 @@ function InterviewBooking() {
                 </div>
               </div>
 
-              {/* Help Section - Hidden on mobile, shown on desktop */}
-              <div className="hidden lg:block space-y-6">
+              <div className="space-y-6">
                 <div className="bg-white rounded-2xl shadow-lg p-6">
                   <h3 className="font-semibold text-gray-800 mb-4">Interview Tips</h3>
                   <div className="space-y-3 text-sm text-gray-600">
@@ -559,204 +570,21 @@ function InterviewBooking() {
             </div>
           )}
 
-          {/* Upcoming Interviews Tab */}
           {activeTab === 'upcoming' && (
-            <div className="space-y-4 sm:space-y-6">
-              {upcomingInterviews.length === 0 ? (
-                <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-                  <i className="fas fa-calendar-times text-3xl text-gray-300 mb-4"></i>
-                  <h3 className="text-lg font-semibold text-gray-600 mb-2">No Upcoming Interviews</h3>
-                  <p className="text-gray-500 mb-6 text-sm">Schedule your first interview to get started</p>
-                  <button
-                    onClick={() => setActiveTab('schedule')}
-                    className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors duration-300 text-sm"
-                  >
-                    Schedule Interview
-                  </button>
-                </div>
-              ) : (
-                upcomingInterviews.map((interview) => (
-                  <div key={interview.id} className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
-                    <div className="flex flex-col space-y-4">
-                      {/* Header */}
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-bold text-gray-800">{interview.jobTitle}</h3>
-                          <p className="text-gray-600 text-sm">{interview.company}</p>
-                        </div>
-                        <div className="text-right">
-                          <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                            {interview.type === 'video' ? 'Video' : 
-                             interview.type === 'phone' ? 'Phone' : 'In Person'}
-                          </span>
-                          <div className="text-xs text-gray-500 mt-1">
-                            {isToday(interview.date) ? 'Today' : 
-                             isTomorrow(interview.date) ? 'Tomorrow' : 
-                             formatDate(interview.date)}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Interview Details */}
-                      <div className="grid grid-cols-1 gap-3">
-                        <div>
-                          <h4 className="font-semibold text-gray-700 mb-2 text-sm">Interview Details</h4>
-                          <div className="space-y-1 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Time:</span>
-                              <span className="font-semibold">{interview.time} ({interview.duration} min)</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Interviewer:</span>
-                              <span className="font-semibold">{interview.interviewer}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {interview.preparation && (
-                          <div>
-                            <h4 className="font-semibold text-gray-700 mb-2 text-sm">Preparation</h4>
-                            <ul className="space-y-1 text-xs text-gray-600">
-                              {interview.preparation.slice(0, 2).map((item, index) => (
-                                <li key={index} className="flex items-start">
-                                  <i className="fas fa-check text-green-500 mt-1 mr-2 text-xs"></i>
-                                  <span>{item}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="space-y-3">
-                        {interview.type === 'video' && (
-                          <div className="space-y-2">
-                            {canJoinMeeting(interview) ? (
-                              <a
-                                href={interview.meetingLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors duration-300 flex items-center justify-center text-sm"
-                              >
-                                <i className="fas fa-video mr-2"></i>
-                                Join Meeting Now
-                              </a>
-                            ) : (
-                              <div className="text-center p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
-                                <i className="fas fa-clock text-yellow-600 text-sm mb-1"></i>
-                                <div className="text-xs text-yellow-700">
-                                  Join available 5 minutes before meeting
-                                </div>
-                              </div>
-                            )}
-                            
-                            <div className="bg-blue-50 rounded-lg p-3">
-                              <h5 className="font-semibold text-blue-800 text-xs mb-1">Meeting Info</h5>
-                              {interview.meetingLink && (
-                                <div className="text-xs text-blue-700 break-all">
-                                  {interview.meetingLink}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="flex space-x-2">
-                          <button className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50 transition-colors duration-300 text-xs">
-                            Reschedule
-                          </button>
-                          <button className="flex-1 border border-red-300 text-red-700 py-2 rounded-lg hover:bg-red-50 transition-colors duration-300 text-xs">
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
+            <div className="text-center py-8">
+              <h3 className="text-xl font-bold text-gray-800 mb-2">
+                {upcomingInterviews.length} Upcoming Interview(s)
+              </h3>
+              <p className="text-gray-600">Your scheduled interviews will appear here</p>
             </div>
           )}
 
-          {/* Past Interviews Tab */}
           {activeTab === 'past' && (
-            <div className="space-y-4 sm:space-y-6">
-              {pastInterviews.length === 0 ? (
-                <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-                  <i className="fas fa-history text-3xl text-gray-300 mb-4"></i>
-                  <h3 className="text-lg font-semibold text-gray-600 mb-2">No Past Interviews</h3>
-                  <p className="text-gray-500 text-sm">Your completed interviews will appear here</p>
-                </div>
-              ) : (
-                pastInterviews.map((interview) => (
-                  <div key={interview.id} className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
-                    <div className="flex flex-col space-y-4">
-                      {/* Header */}
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-bold text-gray-800">{interview.jobTitle}</h3>
-                          <p className="text-gray-600 text-sm">{interview.company}</p>
-                        </div>
-                        <div className="text-right">
-                          <span className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
-                            Completed
-                          </span>
-                          <div className="text-xs text-gray-500 mt-1">
-                            {formatDate(interview.date)} at {interview.time}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Interview Details */}
-                      <div className="grid grid-cols-1 gap-3">
-                        <div>
-                          <h4 className="font-semibold text-gray-700 mb-2 text-sm">Interview Details</h4>
-                          <div className="space-y-1 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Interviewer:</span>
-                              <span className="font-semibold">{interview.interviewer}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Duration:</span>
-                              <span className="font-semibold">{interview.duration} minutes</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Type:</span>
-                              <span className="font-semibold capitalize">{interview.type.replace('_', ' ')}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {interview.feedback && (
-                          <div>
-                            <h4 className="font-semibold text-gray-700 mb-2 text-sm">Feedback</h4>
-                            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                              {interview.rating && (
-                                <div className="flex items-center mb-2">
-                                  {[1,2,3,4,5].map((star) => (
-                                    <i
-                                      key={star}
-                                      className={`fas fa-star ${
-                                        star <= Math.floor(interview.rating)
-                                          ? 'text-yellow-400'
-                                          : star === Math.ceil(interview.rating) && !Number.isInteger(interview.rating)
-                                          ? 'text-yellow-400'
-                                          : 'text-gray-300'
-                                      } text-xs`}
-                                    ></i>
-                                  ))}
-                                  <span className="text-xs text-gray-600 ml-2">{interview.rating}/5</span>
-                                </div>
-                              )}
-                              <p className="text-sm text-gray-700">{interview.feedback}</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
+            <div className="text-center py-8">
+              <h3 className="text-xl font-bold text-gray-800 mb-2">
+                {pastInterviews.length} Past Interview(s)
+              </h3>
+              <p className="text-gray-600">Your completed interviews will appear here</p>
             </div>
           )}
         </div>

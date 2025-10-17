@@ -1,294 +1,316 @@
-"use client";
+"use client"
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { authApi } from '../axios/axiosInsatance';
 
-import React, { useState, ChangeEvent, FormEvent } from "react";
+interface LoginResponse {
+  message: string;
+  token: {
+    access: string;
+    refresh: string;
+  };
+}
 
-function Login() {
+interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+function LoginPage() {
+  const router = useRouter();
+  const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
-    phone: "",
-    password: "",
+    email: '',
+    password: '',
+    confirmPassword: '',
+    firstName: '',
+    lastName: '',
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prevState) => ({
-      ...prevState,
-      [name]: value,
-    }));
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+    if (error) setError('');
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
-    setSuccess(false);
-
+  const handleLogin = async (loginData: LoginRequest) => {
     try {
-      if (!formData.phone || !formData.password) {
-        throw new Error("Phone number and password are required");
-      }
-
-      if (formData.phone.length < 10) {
-        throw new Error("Please enter a valid phone number");
-      }
-
-      const formattedPhone = formData.phone.replace(/\D/g, "");
-
-      const response = await fetch(
-        `https://api.olapy.app/api/v1/accounts/login/?phone=phone`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            phone: formattedPhone,
-            password: formData.password,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setSuccess(true);
-
-        if (data.tokens && data.tokens.length > 0) {
-          localStorage.setItem("accessToken", data.tokens[0].access_token);
-          localStorage.setItem("refreshToken", data.tokens[0].refresh_token);
-        }
-
-        if (data.user) {
-          localStorage.setItem("user", JSON.stringify(data.user));
-        }
-
-        if (data.worker) {
-          localStorage.setItem("worker", JSON.stringify(data.worker));
-        }
-
-        window.location.href = "/list-workers";
+      setIsLoading(true);
+      setError('');
+      const response = await authApi.post<LoginResponse>('login/', loginData);
+      // Remove .data since the API returns LoginResponse directly
+      localStorage.setItem('access_token', response.token.access);
+      localStorage.setItem('refresh_token', response.token.refresh);
+      console.log('Login successful:', response.message);
+      router.push('/dashboard');
+    } catch (err: any) {
+      console.error('Login error:', err);
+      if (err.response?.data) {
+        setError(err.response.data.message || 'Login failed. Please check your credentials.');
+      } else if (err.request) {
+        setError('Network error. Please check your connection.');
       } else {
-        if (response.status === 400) {
-          throw new Error(data.message || "Invalid request. Please check your inputs.");
-        } else if (response.status === 401) {
-          throw new Error(data.message || "Invalid phone number or password.");
-        } else if (response.status === 404) {
-          throw new Error(data.message || "Account not found.");
-        } else if (response.status >= 500) {
-          throw new Error(data.message || "Server error. Please try again later.");
-        } else {
-          throw new Error(data.message || `Login failed with status ${response.status}.`);
-        }
-      }
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("An unexpected error occurred");
+        setError('An unexpected error occurred.');
       }
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!isLogin) {
+      // Handle sign up logic here
+      if (formData.password !== formData.confirmPassword) {
+        setError('Passwords do not match');
+        return;
+      }
+      if (!formData.firstName || !formData.lastName) {
+        setError('Please fill in all fields');
+        return;
+      }
+      console.log('Sign up form submitted:', formData);
+      // Add your sign up API call here
+      return;
+    }
+
+    // Login validation
+    if (!formData.email || !formData.password) {
+      setError('Please fill in all fields');
+      return;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    
+    await handleLogin({
+      email: formData.email,
+      password: formData.password
+    });
+  };
+
   return (
-    <div className="bg-gray-100 min-h-screen flex items-center justify-center p-4">
-      <div className="flex flex-col md:flex-row bg-white rounded-2xl shadow-2xl overflow-hidden max-w-4xl w-full">
-        {/* Left Side - Form */}
-        <div className="w-full md:w-3/5 p-5 md:p-12">
-          <div className="text-left">
-            <h1 className="font-bold text-3xl md:text-4xl text-blue-800">Welcome Back</h1>
-            <p className="text-gray-500 mt-2 mb-8 md:mb-10">
-              Please enter your credentials to access your account.
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-6 text-center">
+          <div className="flex items-center justify-center mb-4">
+            <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center mr-2">
+              <i className="fas fa-globe text-white text-lg"></i>
+            </div>
+            <h1 className="text-xl font-bold">DreamExplore</h1>
           </div>
-
-          {/* Error Message */}
+          <h2 className="text-2xl font-bold mb-2">
+            {isLogin ? 'Welcome Back' : 'Create Account'}
+          </h2>
+          <p className="text-blue-100 text-sm">
+            {isLogin 
+              ? 'Sign in to your account' 
+              : 'Start your global journey today'
+            }
+          </p>
+        </div>
+        <div className="p-6">
+          <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
+            <button
+              onClick={() => setIsLogin(true)}
+              className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-all duration-300 ${
+                isLogin 
+                  ? 'bg-white text-blue-700 shadow-md' 
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => setIsLogin(false)}
+              className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-all duration-300 ${
+                !isLogin 
+                  ? 'bg-white text-blue-700 shadow-md' 
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Sign Up
+            </button>
+          </div>
           {error && (
-            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg flex items-center">
-              <svg
-                className="w-5 h-5 mr-2"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 
-                  0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 
-                  1 0 00-1-1z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              {error}
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600 text-sm text-center">{error}</p>
             </div>
           )}
-
-          {/* Success Message */}
-          {success && (
-            <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-lg flex items-center">
-              <svg
-                className="w-5 h-5 mr-2"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 
-                  16zm3.707-9.293a1 1 0 00-1.414-1.414L9 
-                  10.586 7.707 9.293a1 1 0 00-1.414 
-                  1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Login successful! Redirecting...
-            </div>
-          )}
-
-          {/* Login Form */}
-          <form className="mt-4" onSubmit={handleSubmit}>
-            <div className="mb-6">
-              <label
-                htmlFor="phone"
-                className="block text-gray-700 text-sm font-medium mb-2"
-              >
-                Phone Number
-              </label>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {!isLogin && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <input
+                    type="text"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    placeholder="First Name"
+                    required={!isLogin}
+                    disabled={isLoading}
+                  />
+                </div>
+                <div>
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    placeholder="Last Name"
+                    required={!isLogin}
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+            )}
+            <div>
               <input
-                type="tel"
-                id="phone"
-                name="phone"
-                value={formData.phone}
+                type="email"
+                name="email"
+                value={formData.email}
                 onChange={handleChange}
-                className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your phone number"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                placeholder="Email Address"
                 required
+                disabled={isLoading}
               />
             </div>
-
-            <div className="mb-6">
-              <label
-                htmlFor="password"
-                className="block text-gray-700 text-sm font-medium mb-2"
-              >
-                Password
-              </label>
+            <div>
               <input
                 type="password"
-                id="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your password"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                placeholder="Password"
                 required
+                disabled={isLoading}
+                minLength={6}
               />
             </div>
-
-            <div className="flex justify-between items-center mb-8">
-              <div className="flex items-center">
+            {!isLogin && (
+              <div>
                 <input
-                  type="checkbox"
-                  id="remember"
-                  className="w-4 h-4 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-blue-500"
+                  type="password"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  placeholder="Confirm Password"
+                  required={!isLogin}
+                  disabled={isLoading}
+                  minLength={6}
                 />
-                <label
-                  htmlFor="remember"
-                  className="ml-2 text-sm text-gray-700"
-                >
-                  Remember me
-                </label>
               </div>
-              <a href="#" className="text-sm text-blue-600 hover:underline">
-                Forgot Password?
-              </a>
-            </div>
-
+            )}
+            {isLogin && (
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center">
+                  <input
+                    id="remember-me"
+                    name="remember-me"
+                    type="checkbox"
+                    className="h-3 w-3 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    disabled={isLoading}
+                  />
+                  <label htmlFor="remember-me" className="ml-2 text-gray-700">
+                    Remember me
+                  </label>
+                </div>
+                <a href="#" className="text-blue-600 hover:text-blue-500 font-medium">
+                  Forgot password?
+                </a>
+              </div>
+            )}
             <button
               type="submit"
               disabled={isLoading}
-              className={`${
-                isLoading ? "bg-blue-400" : "bg-blue-700 hover:bg-blue-800"
-              } text-white font-medium py-3 px-4 rounded-lg transition duration-300 w-full flex items-center justify-center`}
+              className={`w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-4 rounded-lg font-bold text-sm shadow-lg transition-all duration-300 ${
+                isLoading 
+                  ? 'opacity-50 cursor-not-allowed' 
+                  : 'hover:shadow-xl hover:-translate-y-0.5'
+              }`}
             >
               {isLoading ? (
-                <>
-                  <svg
-                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 
-                      0 5.373 0 12h4zm2 
-                      5.291A7.962 7.962 0 014 
-                      12H0c0 3.042 1.135 5.824 3 
-                      7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Processing...
-                </>
+                <div className="flex items-center justify-center">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  {isLogin ? 'Signing In...' : 'Creating Account...'}
+                </div>
               ) : (
-                "Sign In"
+                isLogin ? 'Sign In' : 'Create Account'
               )}
             </button>
-          </form>
-
-          <div className="mt-8 text-center">
-            <p className="text-gray-600 text-sm">
-              Don&apos;t have an account?{" "}
-              <a
-                href="#"
-                className="text-blue-600 font-medium hover:underline"
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                disabled={isLoading}
+                className="w-full bg-white border border-gray-300 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-50 transition-all duration-300 flex items-center justify-center disabled:opacity-50"
               >
-                Sign up
-              </a>
+                <i className="fab fa-google text-red-500 mr-2 text-sm"></i>
+                Google
+              </button>
+              <button
+                type="button"
+                disabled={isLoading}
+                className="w-full bg-white border border-gray-300 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-50 transition-all duration-300 flex items-center justify-center disabled:opacity-50"
+              >
+                <i className="fab fa-linkedin text-blue-600 mr-2 text-sm"></i>
+                LinkedIn
+              </button>
+            </div>
+            {!isLogin && (
+              <p className="text-center text-xs text-gray-600 mt-4">
+                By creating an account, you agree to our{' '}
+                <a href="#" className="text-blue-600 hover:text-blue-500 font-medium">
+                  Terms
+                </a>{' '}
+                and{' '}
+                <a href="#" className="text-blue-600 hover:text-blue-500 font-medium">
+                  Privacy Policy
+                </a>
+              </p>
+            )}
+          </form>
+          <div className="text-center mt-6">
+            <p className="text-gray-600 text-sm">
+              {isLogin ? "Don't have an account? " : "Already have an account? "}
+              <button
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setError('');
+                  setFormData({
+                    email: '',
+                    password: '',
+                    confirmPassword: '',
+                    firstName: '',
+                    lastName: '',
+                  });
+                }}
+                disabled={isLoading}
+                className="font-medium text-blue-600 hover:text-blue-500 disabled:opacity-50"
+              >
+                {isLogin ? 'Sign up' : 'Sign in'}
+              </button>
             </p>
-          </div>
-        </div>
-
-        {/* Right Side - Banner */}
-        <div className="w-full md:w-2/5 bg-gradient-to-br from-blue-700 to-blue-900 text-white p-12 flex flex-col justify-center items-center text-center hidden md:block">
-          <div className="w-32 h-32 bg-white bg-opacity-20 rounded-full mb-6 flex items-center justify-center">
-            <svg
-              className="w-16 h-16 text-white"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M5 9V7a5 5 0 0110 0v2a2 2 0 
-                012 2v5a2 2 0 01-2 2H5a2 2 0 
-                01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 
-                3 0 016 0z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-          <h2 className="font-bold text-2xl mb-4">Secure Access</h2>
-          <p className="text-sm text-blue-100">
-            Your data security is our priority. Sign in to access your
-            personalized dashboard.
-          </p>
-
-          <div className="mt-10 bg-white bg-opacity-20 p-4 rounded-xl">
-            <p className="text-sm italic">
-              &quot;This login system has improved our workflow efficiency by 40%.
-              Highly intuitive!&quot;
-            </p>
-            <p className="text-sm mt-2 font-medium">- Alex Johnson, CTO</p>
           </div>
         </div>
       </div>
@@ -296,4 +318,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default LoginPage;

@@ -1,19 +1,102 @@
 "use client"
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, ChangeEvent, FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import api from '../axios/axiosInsatance';
 
+// Define TypeScript interfaces
+interface CampaignData {
+  campaign?: {
+    id: number;
+    title: string;
+    employment_type: string;
+    city: string;
+    state: string;
+    location: string;
+    duration: string;
+    description: string;
+    image: string;
+    category: {
+      name: string;
+    };
+  };
+  gallery?: Array<{
+    image: string;
+  }>;
+  compaign_benefits?: Array<{
+    full_description: string;
+    requirements: string[];
+    responsibilities: string[];
+    benefit: string[];
+  }>;
+}
+
+interface FormData {
+  full_name: string;
+  email: string;
+  phone_number: string;
+  location: string;
+  passport_number: string;
+  nationality: string;
+  id_card: string;
+  card_image_front: File | null;
+  card_image_back: File | null;
+  date_of_birth: string;
+  profile_photo: File | null;
+  bio: string;
+  linkedin_profile: string;
+  website_or_portfolio: string;
+  languages_spoken: string;
+  education: string;
+  resume: File | null;
+  certification: File | null;
+  cover_letter: string;
+  available_start_date: string;
+  qualification: string;
+}
+
+interface Opportunity {
+  id: number;
+  title: string;
+  type: string;
+  location: string;
+  duration: string;
+  salary: string;
+  deadline: string;
+  company: string;
+  companyLogo: string;
+  images: string[];
+  description: string;
+  fullDescription: string;
+  requirements: string[];
+  responsibilities: string[];
+  benefits: string[];
+  applicationProcess: string[];
+}
+
+// Helper function to safely extract data from API response
+const extractDataFromResponse = (response: any): CampaignData | null => {
+  // If response has data property (Axios structure)
+  if (response && typeof response === 'object' && 'data' in response) {
+    return response.data;
+  }
+  // If response is the data directly
+  if (response && typeof response === 'object') {
+    return response;
+  }
+  return null;
+};
+
 function OpportunityDetailPage() {
-  const [showApplicationForm, setShowApplicationForm] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [campaignData, setCampaignData] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [submitError, setSubmitError] = useState('');
+  const [showApplicationForm, setShowApplicationForm] = useState<boolean>(false);
+  const [selectedImage, setSelectedImage] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [campaignData, setCampaignData] = useState<CampaignData | null>(null);
+  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [submitSuccess, setSubmitSuccess] = useState<boolean>(false);
+  const [submitError, setSubmitError] = useState<string>('');
 
   // Form data matching the Django Applicant and Application models
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     // Applicant fields
     full_name: '',
     email: '',
@@ -54,7 +137,10 @@ function OpportunityDetailPage() {
       try {
         setLoading(true);
         const response = await api.get(`/compaign/details/${campaignId}`);
-        setCampaignData(response);
+        
+        // Use helper function to safely extract data
+        const responseData = extractDataFromResponse(response);
+        setCampaignData(responseData);
       } catch (error) {
         console.error('Error fetching campaign data:', error);
       } finally {
@@ -66,27 +152,28 @@ function OpportunityDetailPage() {
   }, [campaignId]);
 
   // Helper function to get full image URL
-  const getImageUrl = (imagePath) => {
+  const getImageUrl = (imagePath: string | undefined): string => {
     if (!imagePath) return '';
     if (imagePath.startsWith('http')) return imagePath;
     return `http://127.0.0.1:8000${imagePath}`;
   };
 
   // Use actual data if available, otherwise use fallback
-  const opportunity = campaignData ? {
-    id: campaignData.campaign?.id,
+  const opportunity: Opportunity = campaignData ? {
+    id: campaignData.campaign?.id || 0,
     title: campaignData.campaign?.title || "Opportunity Title",
     type: campaignData.campaign?.employment_type || "Full-time",
-    location: `${campaignData.campaign?.city}, ${campaignData.campaign?.state}` || campaignData.campaign?.location,
+    location: `${campaignData.campaign?.city || ''}, ${campaignData.campaign?.state || ''}`.trim() || 
+              campaignData.campaign?.location || "Location not specified",
     duration: campaignData.campaign?.duration || "Permanent",
     salary: "Competitive Salary",
     deadline: "2024-12-31",
-    company: campaignData.campaign?.title,
+    company: campaignData.campaign?.title || "Company not specified",
     companyLogo: getImageUrl(campaignData.campaign?.image),
     
     images: campaignData.gallery?.map(item => getImageUrl(item.image)) || [
       getImageUrl(campaignData.campaign?.image)
-    ],
+    ].filter(Boolean),
     
     description: campaignData.campaign?.description || "Join our team for an exciting opportunity.",
     
@@ -95,23 +182,17 @@ function OpportunityDetailPage() {
       Join our dedicated team and make a difference in healthcare.
     `,
     
-    requirements: campaignData.compaign_benefits?.[0]?.requirements || [
-      "Relevant qualifications and experience",
-      "Strong communication skills",
-      "Team player mentality"
-    ],
+    requirements: Array.isArray(campaignData.compaign_benefits?.[0]?.requirements) 
+      ? campaignData.compaign_benefits[0].requirements 
+      : ["Relevant qualifications and experience", "Strong communication skills", "Team player mentality"],
     
-    responsibilities: campaignData.compaign_benefits?.[0]?.responsibilities || [
-      "Perform duties as required",
-      "Collaborate with team members",
-      "Maintain professional standards"
-    ],
+    responsibilities: Array.isArray(campaignData.compaign_benefits?.[0]?.responsibilities) 
+      ? campaignData.compaign_benefits[0].responsibilities 
+      : ["Perform duties as required", "Collaborate with team members", "Maintain professional standards"],
     
-    benefits: campaignData.compaign_benefits?.[0]?.benefit || [
-      "Competitive compensation",
-      "Professional development",
-      "Great work environment"
-    ],
+    benefits: Array.isArray(campaignData.compaign_benefits?.[0]?.benefit) 
+      ? campaignData.compaign_benefits[0].benefit 
+      : ["Competitive compensation", "Professional development", "Great work environment"],
     
     applicationProcess: [
       "Submit online application",
@@ -139,25 +220,26 @@ function OpportunityDetailPage() {
     applicationProcess: ["Loading..."]
   };
 
-  const handleInputChange = (e) => {
-    const { name, value, files } = e.target;
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
     
-    if (files) {
+    if (e.target instanceof HTMLInputElement && e.target.files) {
+      const files = e.target.files;
       setFormData(prev => ({ ...prev, [name]: files[0] }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
-  const handleFileUpload = (e, fieldName) => {
-    const file = e.target.files[0];
+  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>, fieldName: keyof FormData) => {
+    const file = e.target.files?.[0];
     if (file) {
       setFormData(prev => ({ ...prev, [fieldName]: file }));
     }
   };
 
-  const validateForm = () => {
-    const requiredFields = [
+  const validateForm = (): boolean => {
+    const requiredFields: (keyof FormData)[] = [
       'full_name', 'email', 'phone_number', 'location', 
       'passport_number', 'nationality', 'id_card', 'resume'
     ];
@@ -179,7 +261,7 @@ function OpportunityDetailPage() {
     return true;
   };
 
-  const handleSubmitApplication = async (e) => {
+  const handleSubmitApplication = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitError('');
     
@@ -200,8 +282,9 @@ function OpportunityDetailPage() {
       
       // Add all form fields to FormData
       Object.keys(formData).forEach(key => {
-        if (formData[key] !== null && formData[key] !== '') {
-          submitData.append(key, formData[key]);
+        const value = formData[key as keyof FormData];
+        if (value !== null && value !== '') {
+          submitData.append(key, value as string | Blob);
         }
       });
 
@@ -222,7 +305,7 @@ function OpportunityDetailPage() {
       } else {
         throw new Error('Failed to submit application');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting application:', error);
       setSubmitError(error.response?.data?.message || 'Failed to submit application. Please try again.');
     } finally {
@@ -254,12 +337,6 @@ function OpportunityDetailPage() {
       available_start_date: '',
       qualification: ''
     });
-  };
-
-  const formatFieldName = (fieldName) => {
-    return fieldName.split('_').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ');
   };
 
   if (loading) {
@@ -387,7 +464,7 @@ function OpportunityDetailPage() {
                 )}
                 <div>
                   <h3 className="text-xl font-bold text-gray-800">{opportunity.company}</h3>
-                  <p className="text-gray-600">{campaignData.campaign?.category.name} </p>
+                  <p className="text-gray-600">{campaignData?.campaign?.category?.name || 'Healthcare'} </p>
                 </div>
               </div>
             </div>
@@ -727,7 +804,7 @@ function OpportunityDetailPage() {
                       name="bio"
                       value={formData.bio}
                       onChange={handleInputChange}
-                      rows="3"
+                      rows={3}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                       placeholder="Brief summary about yourself..."
                     />
@@ -741,7 +818,7 @@ function OpportunityDetailPage() {
                       name="cover_letter"
                       value={formData.cover_letter}
                       onChange={handleInputChange}
-                      rows="4"
+                      rows={4}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                       placeholder="Tell us why you're interested in this position..."
                     />
@@ -755,7 +832,7 @@ function OpportunityDetailPage() {
                       name="qualification"
                       value={formData.qualification}
                       onChange={handleInputChange}
-                      rows="3"
+                      rows={3}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                       placeholder="List your relevant qualifications..."
                     />
@@ -769,7 +846,7 @@ function OpportunityDetailPage() {
                       name="education"
                       value={formData.education}
                       onChange={handleInputChange}
-                      rows="3"
+                      rows={3}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                       placeholder="Your education background..."
                     />

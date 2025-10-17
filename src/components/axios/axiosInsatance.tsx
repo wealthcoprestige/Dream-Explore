@@ -3,51 +3,48 @@ import axios, {
   AxiosRequestConfig,
   AxiosResponse,
   InternalAxiosRequestConfig,
-} from "axios";
+} from 'axios'
 
 class ApiService {
-  private axiosInstance: AxiosInstance;
+  private axiosInstance: AxiosInstance
 
   constructor(baseURL: string) {
     this.axiosInstance = axios.create({
       baseURL,
       timeout: 10000,
       headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
       },
-    });
+    })
 
     this.axiosInstance.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
-        if (typeof window !== "undefined") {
-          const token = localStorage.getItem("access_token");
+        if (typeof window !== 'undefined') {
+          const token = localStorage.getItem('access_token')
           if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+            config.headers.Authorization = `Bearer ${token}`
           }
         }
-        return config;
+        return config
       },
       (error) => Promise.reject(error)
-    );
+    )
 
     this.axiosInstance.interceptors.response.use(
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
-          console.warn("Unauthorized request. Redirect to login if needed.");
+          console.warn('Unauthorized request. Redirect to login if needed.')
         }
-        return Promise.reject(error);
+        return Promise.reject(error)
       }
-    );
+    )
   }
 
   public async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    const response: AxiosResponse<T> = await this.axiosInstance.get(
-      url,
-      config
-    );
-    return response.data;
+    const response: AxiosResponse<T> = await this.axiosInstance.get(url, config)
+    return response.data
   }
 
   public async post<T>(
@@ -59,8 +56,8 @@ class ApiService {
       url,
       data,
       config
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   public async put<T>(
@@ -72,22 +69,27 @@ class ApiService {
       url,
       data,
       config
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   public async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
     const response: AxiosResponse<T> = await this.axiosInstance.delete(
       url,
       config
-    );
-    return response.data;
+    )
+    return response.data
   }
 }
 
 const baseURL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000/api/v2/";
+  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000/api/v2/'
 
-const api = new ApiService(baseURL);
 
-export default api;
+const loginBaseURL =
+  process.env.NEXT_PUBLIC_LOGIN_BASE_URL || 'http://127.0.0.1:8000/accounts/'
+
+export const api = new ApiService(baseURL)
+export const authApi = new ApiService(loginBaseURL) 
+
+export default api
