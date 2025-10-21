@@ -1,7 +1,8 @@
-"use client"
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { authApi } from '../axios/axiosInsatance';
+"use client";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { authApi } from "../axios/axiosInsatance";
+import { AxiosError } from "axios";
 
 interface LoginResponse {
   message: string;
@@ -20,41 +21,44 @@ function LoginPage() {
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    firstName: '',
-    lastName: '',
+    email: "",
+    password: "",
+    confirmPassword: "",
+    firstName: "",
+    lastName: "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
-    if (error) setError('');
+    if (error) setError("");
   };
 
   const handleLogin = async (loginData: LoginRequest) => {
     try {
       setIsLoading(true);
-      setError('');
-      const response = await authApi.post<LoginResponse>('login/', loginData);
+      setError("");
+      const response = await authApi.post<LoginResponse>("login/", loginData);
       // Remove .data since the API returns LoginResponse directly
-      localStorage.setItem('access_token', response.token.access);
-      localStorage.setItem('refresh_token', response.token.refresh);
-      console.log('Login successful:', response.message);
-      router.push('/dashboard');
-    } catch (err: any) {
-      console.error('Login error:', err);
-      if (err.response?.data) {
-        setError(err.response.data.message || 'Login failed. Please check your credentials.');
-      } else if (err.request) {
-        setError('Network error. Please check your connection.');
+      localStorage.setItem("access_token", response.token.access);
+      localStorage.setItem("refresh_token", response.token.refresh);
+      console.log("Login successful:", response.message);
+      router.push("/dashboard");
+    } catch (err) {
+      console.error("Login error:", err);
+      if (err instanceof AxiosError) {
+        setError(
+          err.response?.data?.message ||
+            "Login failed. Please check your credentials."
+        );
+      } else if (err instanceof AxiosError && err.request) {
+        setError("Network error. Please check your connection.");
       } else {
-        setError('An unexpected error occurred.');
+        setError("An unexpected error occurred.");
       }
     } finally {
       setIsLoading(false);
@@ -63,37 +67,37 @@ function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!isLogin) {
       // Handle sign up logic here
       if (formData.password !== formData.confirmPassword) {
-        setError('Passwords do not match');
+        setError("Passwords do not match");
         return;
       }
       if (!formData.firstName || !formData.lastName) {
-        setError('Please fill in all fields');
+        setError("Please fill in all fields");
         return;
       }
-      console.log('Sign up form submitted:', formData);
+      console.log("Sign up form submitted:", formData);
       // Add your sign up API call here
       return;
     }
 
     // Login validation
     if (!formData.email || !formData.password) {
-      setError('Please fill in all fields');
+      setError("Please fill in all fields");
       return;
     }
-    
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setError('Please enter a valid email address');
+      setError("Please enter a valid email address");
       return;
     }
-    
+
     await handleLogin({
       email: formData.email,
-      password: formData.password
+      password: formData.password,
     });
   };
 
@@ -108,13 +112,12 @@ function LoginPage() {
             <h1 className="text-xl font-bold">DreamExplore</h1>
           </div>
           <h2 className="text-2xl font-bold mb-2">
-            {isLogin ? 'Welcome Back' : 'Create Account'}
+            {isLogin ? "Welcome Back" : "Create Account"}
           </h2>
           <p className="text-blue-100 text-sm">
-            {isLogin 
-              ? 'Sign in to your account' 
-              : 'Start your global journey today'
-            }
+            {isLogin
+              ? "Sign in to your account"
+              : "Start your global journey today"}
           </p>
         </div>
         <div className="p-6">
@@ -122,9 +125,9 @@ function LoginPage() {
             <button
               onClick={() => setIsLogin(true)}
               className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-all duration-300 ${
-                isLogin 
-                  ? 'bg-white text-blue-700 shadow-md' 
-                  : 'text-gray-600 hover:text-gray-800'
+                isLogin
+                  ? "bg-white text-blue-700 shadow-md"
+                  : "text-gray-600 hover:text-gray-800"
               }`}
             >
               Sign In
@@ -132,9 +135,9 @@ function LoginPage() {
             <button
               onClick={() => setIsLogin(false)}
               className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-all duration-300 ${
-                !isLogin 
-                  ? 'bg-white text-blue-700 shadow-md' 
-                  : 'text-gray-600 hover:text-gray-800'
+                !isLogin
+                  ? "bg-white text-blue-700 shadow-md"
+                  : "text-gray-600 hover:text-gray-800"
               }`}
             >
               Sign Up
@@ -228,7 +231,10 @@ function LoginPage() {
                     Remember me
                   </label>
                 </div>
-                <a href="#" className="text-blue-600 hover:text-blue-500 font-medium">
+                <a
+                  href="#"
+                  className="text-blue-600 hover:text-blue-500 font-medium"
+                >
                   Forgot password?
                 </a>
               </div>
@@ -237,18 +243,20 @@ function LoginPage() {
               type="submit"
               disabled={isLoading}
               className={`w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-4 rounded-lg font-bold text-sm shadow-lg transition-all duration-300 ${
-                isLoading 
-                  ? 'opacity-50 cursor-not-allowed' 
-                  : 'hover:shadow-xl hover:-translate-y-0.5'
+                isLoading
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:shadow-xl hover:-translate-y-0.5"
               }`}
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  {isLogin ? 'Signing In...' : 'Creating Account...'}
+                  {isLogin ? "Signing In..." : "Creating Account..."}
                 </div>
+              ) : isLogin ? (
+                "Sign In"
               ) : (
-                isLogin ? 'Sign In' : 'Create Account'
+                "Create Account"
               )}
             </button>
             <div className="relative my-4">
@@ -256,7 +264,9 @@ function LoginPage() {
                 <div className="w-full border-t border-gray-300"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+                <span className="px-2 bg-white text-gray-500">
+                  Or continue with
+                </span>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -279,12 +289,18 @@ function LoginPage() {
             </div>
             {!isLogin && (
               <p className="text-center text-xs text-gray-600 mt-4">
-                By creating an account, you agree to our{' '}
-                <a href="#" className="text-blue-600 hover:text-blue-500 font-medium">
+                By creating an account, you agree to our{" "}
+                <a
+                  href="#"
+                  className="text-blue-600 hover:text-blue-500 font-medium"
+                >
                   Terms
-                </a>{' '}
-                and{' '}
-                <a href="#" className="text-blue-600 hover:text-blue-500 font-medium">
+                </a>{" "}
+                and{" "}
+                <a
+                  href="#"
+                  className="text-blue-600 hover:text-blue-500 font-medium"
+                >
                   Privacy Policy
                 </a>
               </p>
@@ -292,23 +308,25 @@ function LoginPage() {
           </form>
           <div className="text-center mt-6">
             <p className="text-gray-600 text-sm">
-              {isLogin ? "Don't have an account? " : "Already have an account? "}
+              {isLogin
+                ? "Don't have an account? "
+                : "Already have an account? "}
               <button
                 onClick={() => {
                   setIsLogin(!isLogin);
-                  setError('');
+                  setError("");
                   setFormData({
-                    email: '',
-                    password: '',
-                    confirmPassword: '',
-                    firstName: '',
-                    lastName: '',
+                    email: "",
+                    password: "",
+                    confirmPassword: "",
+                    firstName: "",
+                    lastName: "",
                   });
                 }}
                 disabled={isLoading}
                 className="font-medium text-blue-600 hover:text-blue-500 disabled:opacity-50"
               >
-                {isLogin ? 'Sign up' : 'Sign in'}
+                {isLogin ? "Sign up" : "Sign in"}
               </button>
             </p>
           </div>

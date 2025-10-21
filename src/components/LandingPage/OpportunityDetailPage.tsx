@@ -1,7 +1,9 @@
-"use client"
-import React, { useEffect, useState, ChangeEvent, FormEvent } from 'react';
-import { useSearchParams } from 'next/navigation';
-import api from '../axios/axiosInsatance';
+"use client";
+import React, { useEffect, useState, ChangeEvent, FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { AxiosError, AxiosResponse } from "axios";
+import Image from "next/image";
+import api from "../axios/axiosInsatance";
 
 // Define TypeScript interfaces
 interface CampaignData {
@@ -36,6 +38,7 @@ interface FormData {
   phone_number: string;
   location: string;
   passport_number: string;
+  whats_app: string;
   nationality: string;
   id_card: string;
   card_image_front: File | null;
@@ -49,7 +52,7 @@ interface FormData {
   education: string;
   resume: File | null;
   certification: File | null;
-  cover_letter: string;
+  cover_letter: File | null;
   available_start_date: string;
   qualification: string;
 }
@@ -74,62 +77,67 @@ interface Opportunity {
 }
 
 // Helper function to safely extract data from API response
-const extractDataFromResponse = (response: any): CampaignData | null => {
+const extractDataFromResponse = (response: unknown): CampaignData | null => {
   // If response has data property (Axios structure)
-  if (response && typeof response === 'object' && 'data' in response) {
-    return response.data;
+  if (response && typeof response === "object" && "data" in response) {
+    return response.data as CampaignData;
   }
   // If response is the data directly
-  if (response && typeof response === 'object') {
-    return response;
+  if (response && typeof response === "object") {
+    return response as CampaignData;
   }
   return null;
 };
 
 function OpportunityDetailPage() {
-  const [showApplicationForm, setShowApplicationForm] = useState<boolean>(false);
+  const [showApplicationForm, setShowApplicationForm] =
+    useState<boolean>(false);
   const [selectedImage, setSelectedImage] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [campaignData, setCampaignData] = useState<CampaignData | null>(null);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [submitSuccess, setSubmitSuccess] = useState<boolean>(false);
-  const [submitError, setSubmitError] = useState<string>('');
+  const [submitError, setSubmitError] = useState<string>("");
+  const [unauthenticatedSuccess, setUnauthenticatedSuccess] =
+    useState<boolean>(false);
 
   // Form data matching the Django Applicant and Application models
   const [formData, setFormData] = useState<FormData>({
     // Applicant fields
-    full_name: '',
-    email: '',
-    phone_number: '',
-    location: '',
-    passport_number: '',
-    nationality: '',
-    id_card: '',
+    full_name: "",
+    email: "",
+    phone_number: "",
+    location: "",
+    whats_app: "",
+    passport_number: "",
+    nationality: "",
+    id_card: "",
     card_image_front: null,
     card_image_back: null,
-    date_of_birth: '',
+    date_of_birth: "",
     profile_photo: null,
-    bio: '',
-    linkedin_profile: '',
-    website_or_portfolio: '',
-    languages_spoken: '',
-    education: '',
-    
+    bio: "",
+    linkedin_profile: "",
+    website_or_portfolio: "",
+    languages_spoken: "",
+    education: "",
+
     // Application fields
     resume: null,
     certification: null,
-    cover_letter: '',
-    available_start_date: '',
-    qualification: ''
+    cover_letter: null,
+    available_start_date: "",
+    qualification: "",
   });
 
   const searchParams = useSearchParams();
-  const campaignId = searchParams.get('campaign_id');
+  const campaignId = searchParams.get("campaign_id");
+  const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
       if (!campaignId) {
-        console.error('No campaign ID provided');
+        console.error("No campaign ID provided");
         setLoading(false);
         return;
       }
@@ -137,12 +145,12 @@ function OpportunityDetailPage() {
       try {
         setLoading(true);
         const response = await api.get(`/compaign/details/${campaignId}`);
-        
+
         // Use helper function to safely extract data
         const responseData = extractDataFromResponse(response);
         setCampaignData(responseData);
       } catch (error) {
-        console.error('Error fetching campaign data:', error);
+        console.error("Error fetching campaign data:", error);
       } finally {
         setLoading(false);
       }
@@ -153,108 +161,153 @@ function OpportunityDetailPage() {
 
   // Helper function to get full image URL
   const getImageUrl = (imagePath: string | undefined): string => {
-    if (!imagePath) return '';
-    if (imagePath.startsWith('http')) return imagePath;
+    if (!imagePath) return "";
+    if (imagePath.startsWith("http")) return imagePath;
     return `http://127.0.0.1:8000${imagePath}`;
   };
 
   // Use actual data if available, otherwise use fallback
-  const opportunity: Opportunity = campaignData ? {
-    id: campaignData.campaign?.id || 0,
-    title: campaignData.campaign?.title || "Opportunity Title",
-    type: campaignData.campaign?.employment_type || "Full-time",
-    location: `${campaignData.campaign?.city || ''}, ${campaignData.campaign?.state || ''}`.trim() || 
-              campaignData.campaign?.location || "Location not specified",
-    duration: campaignData.campaign?.duration || "Permanent",
-    salary: "Competitive Salary",
-    deadline: "2024-12-31",
-    company: campaignData.campaign?.title || "Company not specified",
-    companyLogo: getImageUrl(campaignData.campaign?.image),
-    
-    images: campaignData.gallery?.map(item => getImageUrl(item.image)) || [
-      getImageUrl(campaignData.campaign?.image)
-    ].filter(Boolean),
-    
-    description: campaignData.campaign?.description || "Join our team for an exciting opportunity.",
-    
-    fullDescription: campaignData.compaign_benefits?.[0]?.full_description || campaignData.campaign?.description || `
+  const opportunity: Opportunity = campaignData
+    ? {
+        id: campaignData.campaign?.id || 0,
+        title: campaignData.campaign?.title || "Opportunity Title",
+        type: campaignData.campaign?.employment_type || "Full-time",
+        location:
+          `${campaignData.campaign?.city || ""}, ${
+            campaignData.campaign?.state || ""
+          }`.trim() ||
+          campaignData.campaign?.location ||
+          "Location not specified",
+        duration: campaignData.campaign?.duration || "Permanent",
+        salary: "Competitive Salary",
+        deadline: "2024-12-31",
+        company: campaignData.campaign?.title || "Company not specified",
+        companyLogo: getImageUrl(campaignData.campaign?.image),
+
+        images:
+          campaignData.gallery?.map((item) => getImageUrl(item.image)) ||
+          [getImageUrl(campaignData.campaign?.image)].filter(Boolean),
+
+        description:
+          campaignData.campaign?.description ||
+          "Join our team for an exciting opportunity.",
+
+        fullDescription:
+          campaignData.compaign_benefits?.[0]?.full_description ||
+          campaignData.campaign?.description ||
+          `
       This position offers great opportunities for professional growth and development.
       Join our dedicated team and make a difference in healthcare.
     `,
-    
-    requirements: Array.isArray(campaignData.compaign_benefits?.[0]?.requirements) 
-      ? campaignData.compaign_benefits[0].requirements 
-      : ["Relevant qualifications and experience", "Strong communication skills", "Team player mentality"],
-    
-    responsibilities: Array.isArray(campaignData.compaign_benefits?.[0]?.responsibilities) 
-      ? campaignData.compaign_benefits[0].responsibilities 
-      : ["Perform duties as required", "Collaborate with team members", "Maintain professional standards"],
-    
-    benefits: Array.isArray(campaignData.compaign_benefits?.[0]?.benefit) 
-      ? campaignData.compaign_benefits[0].benefit 
-      : ["Competitive compensation", "Professional development", "Great work environment"],
-    
-    applicationProcess: [
-      "Submit online application",
-      "Initial screening",
-      "Interview process",
-      "Offer and onboarding"
-    ]
-  } : {
-    // Fallback data while loading or if no data
-    id: 7,
-    title: "Loading...",
-    type: "Loading...",
-    location: "Loading...",
-    duration: "Loading...",
-    salary: "Loading...",
-    deadline: "2024-12-31",
-    company: "Loading...",
-    companyLogo: "",
-    images: [],
-    description: "Loading...",
-    fullDescription: "Loading...",
-    requirements: ["Loading..."],
-    responsibilities: ["Loading..."],
-    benefits: ["Loading..."],
-    applicationProcess: ["Loading..."]
-  };
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        requirements: Array.isArray(
+          campaignData.compaign_benefits?.[0]?.requirements
+        )
+          ? campaignData.compaign_benefits[0].requirements
+          : [
+              "Relevant qualifications and experience",
+              "Strong communication skills",
+              "Team player mentality",
+            ],
+
+        responsibilities: Array.isArray(
+          campaignData.compaign_benefits?.[0]?.responsibilities
+        )
+          ? campaignData.compaign_benefits[0].responsibilities
+          : [
+              "Perform duties as required",
+              "Collaborate with team members",
+              "Maintain professional standards",
+            ],
+
+        benefits: Array.isArray(campaignData.compaign_benefits?.[0]?.benefit)
+          ? campaignData.compaign_benefits[0].benefit
+          : [
+              "Competitive compensation",
+              "Professional development",
+              "Great work environment",
+            ],
+
+        applicationProcess: [
+          "Submit online application",
+          "Initial screening",
+          "Interview process",
+          "Offer and onboarding",
+        ],
+      }
+    : {
+        // Fallback data while loading or if no data
+        id: 7,
+        title: "Loading...",
+        type: "Loading...",
+        location: "Loading...",
+        duration: "Loading...",
+        salary: "Loading...",
+        deadline: "2024-12-31",
+        company: "Loading...",
+        companyLogo: "",
+        images: [],
+        description: "Loading...",
+        fullDescription: "Loading...",
+        requirements: ["Loading..."],
+        responsibilities: ["Loading..."],
+        benefits: ["Loading..."],
+        applicationProcess: ["Loading..."],
+      };
+
+  const handleInputChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    
+
     if (e.target instanceof HTMLInputElement && e.target.files) {
       const files = e.target.files;
-      setFormData(prev => ({ ...prev, [name]: files[0] }));
+      setFormData((prev) => ({ ...prev, [name]: files[0] }));
     } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
-  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>, fieldName: keyof FormData) => {
+  const handleFileUpload = (
+    e: ChangeEvent<HTMLInputElement>,
+    fieldName: keyof FormData
+  ) => {
     const file = e.target.files?.[0];
     if (file) {
-      setFormData(prev => ({ ...prev, [fieldName]: file }));
+      setFormData((prev) => ({ ...prev, [fieldName]: file }));
     }
   };
 
   const validateForm = (): boolean => {
     const requiredFields: (keyof FormData)[] = [
-      'full_name', 'email', 'phone_number', 'location', 
-      'passport_number', 'nationality', 'id_card', 'resume'
+      "full_name",
+      "email",
+      "phone_number",
+      "location",
+      "passport_number",
+      "nationality",
+      "id_card",
+      "resume",
     ];
 
     for (const field of requiredFields) {
       if (!formData[field]) {
-        setSubmitError(`Please fill in the ${field.replace('_', ' ')} field`);
+        setSubmitError(`Please fill in the ${field.replace("_", " ")} field`);
         return false;
       }
     }
 
     // Validate file types
     const resumeFile = formData.resume;
-    if (resumeFile && !['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(resumeFile.type)) {
-      setSubmitError('Resume must be a PDF or Word document');
+    if (
+      resumeFile &&
+      ![
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ].includes(resumeFile.type)
+    ) {
+      setSubmitError("Resume must be a PDF or Word document");
       return false;
     }
 
@@ -263,51 +316,95 @@ function OpportunityDetailPage() {
 
   const handleSubmitApplication = async (e: FormEvent) => {
     e.preventDefault();
-    setSubmitError('');
-    
+    setSubmitError("");
+
     if (!validateForm()) {
       return;
     }
 
     if (!campaignId) {
-      setSubmitError('No campaign selected');
+      setSubmitError("No campaign selected");
       return;
     }
 
     setSubmitting(true);
 
+    // Check for authentication token
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("access_token")
+        : null;
+    const isAuthenticated = !!token;
+
     try {
-      // Create FormData for file uploads
-      const submitData = new FormData();
-      
-      // Add all form fields to FormData
-      Object.keys(formData).forEach(key => {
-        const value = formData[key as keyof FormData];
-        if (value !== null && value !== '') {
-          submitData.append(key, value as string | Blob);
+      if (isAuthenticated) {
+        // Authenticated user flow
+        const authSubmitData = new FormData();
+        // Authenticated users might only need to submit application-specific fields
+        authSubmitData.append("resume", formData.resume || "");
+        authSubmitData.append("certification", formData.certification || "");
+        authSubmitData.append("cover_letter", formData.cover_letter || "");
+        authSubmitData.append(
+          "available_start_date",
+          formData.available_start_date
+        );
+        authSubmitData.append("qualification", formData.qualification);
+        const response: AxiosResponse = await api.post(
+          `applicant/application/auth/${campaignId}`,
+          authSubmitData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+
+        if (response.status === 200 || response.status === 201) {
+          setSubmitSuccess(true);
+          setTimeout(() => router.push("/dashboard"), 2000);
         }
-      });
-
-      // Add campaign ID
-      submitData.append('campaign', campaignId);
-
-      // Submit application to your endpoint
-      const response = await api.post('/applications/create/', submitData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      if (response.status === 201 || response.status === 200) {
-        setSubmitSuccess(true);
-        setShowApplicationForm(false);
-        resetForm();
       } else {
-        throw new Error('Failed to submit application');
+        // Unauthenticated user flow
+        const unauthSubmitData = new FormData();
+        Object.keys(formData).forEach((key) => {
+          const value = formData[key as keyof FormData];
+          if (value !== null && value !== "") {
+            unauthSubmitData.append(key, value as string | Blob);
+          }
+        });
+
+        const response: AxiosResponse = await api.post(
+          `create/applicant/application/unauthenticated/${campaignId}`,
+          unauthSubmitData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+
+        if (response.status === 200 && response.data.success) {
+          setUnauthenticatedSuccess(true);
+          setShowApplicationForm(false);
+          resetForm();
+        }
       }
-    } catch (error: any) {
-      console.error('Error submitting application:', error);
-      setSubmitError(error.response?.data?.message || 'Failed to submit application. Please try again.');
+    } catch (error) {
+      console.error("Error submitting application:", error);
+      if (error instanceof AxiosError && error.response) {
+        const errorData = error.response.data;
+        // Handle specific error for already applied
+        if (errorData.applicant && Array.isArray(errorData.applicant)) {
+          setSubmitError(errorData.applicant[0]);
+        } else {
+          setSubmitError(
+            errorData.message ||
+              "Failed to submit application. Please try again."
+          );
+        }
+      } else {
+        setSubmitError("An unexpected error occurred. Please try again.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -315,27 +412,28 @@ function OpportunityDetailPage() {
 
   const resetForm = () => {
     setFormData({
-      full_name: '',
-      email: '',
-      phone_number: '',
-      location: '',
-      passport_number: '',
-      nationality: '',
-      id_card: '',
+      full_name: "",
+      email: "",
+      phone_number: "",
+      location: "",
+      whats_app: "",
+      passport_number: "",
+      nationality: "",
+      id_card: "",
       card_image_front: null,
       card_image_back: null,
-      date_of_birth: '',
+      date_of_birth: "",
       profile_photo: null,
-      bio: '',
-      linkedin_profile: '',
-      website_or_portfolio: '',
-      languages_spoken: '',
-      education: '',
+      bio: "",
+      linkedin_profile: "",
+      website_or_portfolio: "",
+      languages_spoken: "",
+      education: "",
       resume: null,
       certification: null,
-      cover_letter: '',
-      available_start_date: '',
-      qualification: ''
+      cover_letter: null,
+      available_start_date: "",
+      qualification: "",
     });
   };
 
@@ -355,10 +453,14 @@ function OpportunityDetailPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Campaign Not Found</h2>
-          <p className="text-gray-600">No campaign ID provided. Please go back and select an opportunity.</p>
-          <button 
-            onClick={() => window.history.back()} 
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            Campaign Not Found
+          </h2>
+          <p className="text-gray-600">
+            No campaign ID provided. Please go back and select an opportunity.
+          </p>
+          <button
+            onClick={() => window.history.back()}
             className="mt-4 bg-blue-800 text-white px-6 py-3 rounded-full font-semibold hover:bg-blue-700 transition-colors duration-300"
           >
             Go Back
@@ -370,12 +472,38 @@ function OpportunityDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Success Notification */}
+      {/* Success Notification for Authenticated User */}
       {submitSuccess && (
         <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
           <div className="flex items-center">
             <i className="fas fa-check-circle mr-2"></i>
-            Application submitted successfully!
+            Application submitted successfully! Redirecting to your dashboard...
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal for Unauthenticated User */}
+      {unauthenticatedSuccess && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full text-center p-8">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <i className="fas fa-check text-green-600 text-3xl"></i>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              Your Journey Begins!
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Thank you for applying! We&apos;ve received your application and
+              created an account for you. Your login details have been sent to
+              your email. Please check your inbox (and spam folder) to access
+              your applicant dashboard.
+            </p>
+            <button
+              onClick={() => router.push("/accounts/login")}
+              className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+            >
+              Proceed to Login
+            </button>
           </div>
         </div>
       )}
@@ -384,12 +512,15 @@ function OpportunityDetailPage() {
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4">
           <nav className="flex justify-between items-center py-4">
-            <a href="#" className="flex items-center text-2xl font-bold text-blue-800">
+            <a
+              href="#"
+              className="flex items-center text-2xl font-bold text-blue-800"
+            >
               <i className="fas fa-globe-americas mr-2 text-2xl"></i>
               DreamExplore
             </a>
             <div className="flex items-center space-x-4">
-              <button 
+              <button
                 onClick={() => window.history.back()}
                 className="text-gray-600 hover:text-blue-800 transition-colors duration-300 flex items-center"
               >
@@ -410,9 +541,11 @@ function OpportunityDetailPage() {
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
               <div className="relative h-96 overflow-hidden">
                 {opportunity.images.length > 0 ? (
-                  <img 
+                  <Image
                     src={opportunity.images[selectedImage]}
                     alt={opportunity.title}
+                    width={800}
+                    height={384}
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -424,7 +557,7 @@ function OpportunityDetailPage() {
                   {opportunity.type}
                 </div>
               </div>
-              
+
               {/* Thumbnail Gallery */}
               {opportunity.images.length > 1 && (
                 <div className="p-4 bg-gray-50">
@@ -434,12 +567,16 @@ function OpportunityDetailPage() {
                         key={index}
                         onClick={() => setSelectedImage(index)}
                         className={`relative h-20 rounded-lg overflow-hidden border-2 transition-all duration-300 ${
-                          selectedImage === index ? 'border-blue-600' : 'border-transparent'
+                          selectedImage === index
+                            ? "border-blue-600"
+                            : "border-transparent"
                         }`}
                       >
-                        <img 
-                          src={image} 
+                        <Image
+                          src={image}
                           alt={`Thumbnail ${index + 1}`}
+                          width={200}
+                          height={80}
                           className="w-full h-full object-cover"
                         />
                         {selectedImage === index && (
@@ -456,24 +593,34 @@ function OpportunityDetailPage() {
             <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
               <div className="flex items-center space-x-4">
                 {opportunity.companyLogo && (
-                  <img 
-                    src={opportunity.companyLogo} 
+                  <Image
+                    src={opportunity.companyLogo}
                     alt={opportunity.company}
+                    width={64}
+                    height={64}
                     className="w-16 h-16 rounded-full object-cover"
                   />
                 )}
                 <div>
-                  <h3 className="text-xl font-bold text-gray-800">{opportunity.company}</h3>
-                  <p className="text-gray-600">{campaignData?.campaign?.category?.name || 'Healthcare'} </p>
+                  <h3 className="text-xl font-bold text-gray-800">
+                    {opportunity.company}
+                  </h3>
+                  <p className="text-gray-600">
+                    {campaignData?.campaign?.category?.name || "Healthcare"}{" "}
+                  </p>
                 </div>
               </div>
             </div>
 
             {/* Detailed Description */}
             <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Position Overview</h2>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                Position Overview
+              </h2>
               <div className="prose max-w-none">
-                <p className="text-gray-600 leading-relaxed mb-4">{opportunity.description}</p>
+                <p className="text-gray-600 leading-relaxed mb-4">
+                  {opportunity.description}
+                </p>
                 <div className="whitespace-pre-line text-gray-600 leading-relaxed">
                   {opportunity.fullDescription}
                 </div>
@@ -482,7 +629,9 @@ function OpportunityDetailPage() {
 
             {/* Requirements */}
             <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Requirements & Qualifications</h2>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                Requirements & Qualifications
+              </h2>
               <ul className="space-y-3">
                 {opportunity.requirements.map((req, index) => (
                   <li key={index} className="flex items-start">
@@ -495,7 +644,9 @@ function OpportunityDetailPage() {
 
             {/* Responsibilities */}
             <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Key Responsibilities</h2>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                Key Responsibilities
+              </h2>
               <ul className="space-y-3">
                 {opportunity.responsibilities.map((resp, index) => (
                   <li key={index} className="flex items-start">
@@ -512,8 +663,10 @@ function OpportunityDetailPage() {
             <div className="sticky top-8">
               {/* Application Card */}
               <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">Apply for this Position</h3>
-                
+                <h3 className="text-xl font-bold text-gray-800 mb-4">
+                  Apply for this Position
+                </h3>
+
                 <div className="space-y-4 mb-6">
                   <div className="flex items-center text-gray-600">
                     <i className="fas fa-map-marker-alt mr-3 text-blue-600"></i>
@@ -529,11 +682,14 @@ function OpportunityDetailPage() {
                   </div>
                   <div className="flex items-center text-gray-600">
                     <i className="fas fa-calendar-alt mr-3 text-blue-600"></i>
-                    <span>Apply by {new Date(opportunity.deadline).toLocaleDateString()}</span>
+                    <span>
+                      Apply by{" "}
+                      {new Date(opportunity.deadline).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
 
-                <button 
+                <button
                   onClick={() => setShowApplicationForm(true)}
                   className="w-full bg-gradient-to-r from-blue-800 to-blue-600 text-white py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
                 >
@@ -548,7 +704,9 @@ function OpportunityDetailPage() {
 
               {/* Benefits Card */}
               <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">Benefits & Perks</h3>
+                <h3 className="text-xl font-bold text-gray-800 mb-4">
+                  Benefits & Perks
+                </h3>
                 <div className="grid grid-cols-1 gap-3">
                   {opportunity.benefits.slice(0, 6).map((benefit, index) => (
                     <div key={index} className="flex items-center">
@@ -574,16 +732,20 @@ function OpportunityDetailPage() {
           <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
               <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-800">Apply for {opportunity.title}</h2>
-                <button 
+                <h2 className="text-2xl font-bold text-gray-800">
+                  Apply for {opportunity.title}
+                </h2>
+                <button
                   onClick={() => setShowApplicationForm(false)}
                   className="text-gray-400 hover:text-gray-600 transition-colors duration-300"
                 >
                   <i className="fas fa-times text-xl"></i>
                 </button>
               </div>
-              <p className="text-gray-600 mt-2">{opportunity.company} • {opportunity.location}</p>
-              
+              <p className="text-gray-600 mt-2">
+                {opportunity.company} • {opportunity.location}
+              </p>
+
               {submitError && (
                 <div className="mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
                   <i className="fas fa-exclamation-triangle mr-2"></i>
@@ -595,7 +757,9 @@ function OpportunityDetailPage() {
             <form onSubmit={handleSubmitApplication} className="p-6">
               {/* Personal Information Section */}
               <div className="mb-8">
-                <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Personal Information</h3>
+                <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">
+                  Personal Information
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -639,6 +803,20 @@ function OpportunityDetailPage() {
                       required
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                       placeholder="Enter your phone number"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      WhatsApp Number (Optional)
+                    </label>
+                    <input
+                      type="tel"
+                      name="whats_app"
+                      value={formData.whats_app}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      placeholder="Enter your WhatsApp number"
                     />
                   </div>
 
@@ -719,7 +897,9 @@ function OpportunityDetailPage() {
 
               {/* Document Uploads Section */}
               <div className="mb-8">
-                <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Documents & Files</h3>
+                <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">
+                  Documents & Files
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -728,12 +908,14 @@ function OpportunityDetailPage() {
                     <input
                       type="file"
                       name="resume"
-                      onChange={(e) => handleFileUpload(e, 'resume')}
+                      onChange={(e) => handleFileUpload(e, "resume")}
                       required
                       accept=".pdf,.doc,.docx"
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     />
-                    <p className="text-xs text-gray-500 mt-1">PDF, DOC, DOCX files only</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      PDF, DOC, DOCX files only
+                    </p>
                   </div>
 
                   <div>
@@ -743,7 +925,7 @@ function OpportunityDetailPage() {
                     <input
                       type="file"
                       name="certification"
-                      onChange={(e) => handleFileUpload(e, 'certification')}
+                      onChange={(e) => handleFileUpload(e, "certification")}
                       accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     />
@@ -756,7 +938,7 @@ function OpportunityDetailPage() {
                     <input
                       type="file"
                       name="card_image_front"
-                      onChange={(e) => handleFileUpload(e, 'card_image_front')}
+                      onChange={(e) => handleFileUpload(e, "card_image_front")}
                       required
                       accept=".jpg,.jpeg,.png"
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
@@ -770,7 +952,7 @@ function OpportunityDetailPage() {
                     <input
                       type="file"
                       name="card_image_back"
-                      onChange={(e) => handleFileUpload(e, 'card_image_back')}
+                      onChange={(e) => handleFileUpload(e, "card_image_back")}
                       required
                       accept=".jpg,.jpeg,.png"
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
@@ -784,7 +966,7 @@ function OpportunityDetailPage() {
                     <input
                       type="file"
                       name="profile_photo"
-                      onChange={(e) => handleFileUpload(e, 'profile_photo')}
+                      onChange={(e) => handleFileUpload(e, "profile_photo")}
                       accept=".jpg,.jpeg,.png"
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     />
@@ -794,7 +976,9 @@ function OpportunityDetailPage() {
 
               {/* Additional Information Section */}
               <div className="mb-8">
-                <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Additional Information</h3>
+                <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">
+                  Additional Information
+                </h3>
                 <div className="grid grid-cols-1 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -812,16 +996,18 @@ function OpportunityDetailPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Cover Letter
+                      Cover Letter (Optional)
                     </label>
-                    <textarea
+                    <input
+                      type="file"
                       name="cover_letter"
-                      value={formData.cover_letter}
-                      onChange={handleInputChange}
-                      rows={4}
+                      onChange={(e) => handleFileUpload(e, "cover_letter")}
+                      accept=".pdf,.doc,.docx"
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                      placeholder="Tell us why you're interested in this position..."
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      PDF, DOC, DOCX files only
+                    </p>
                   </div>
 
                   <div>
@@ -932,7 +1118,7 @@ function OpportunityDetailPage() {
                       Submitting...
                     </div>
                   ) : (
-                    'Submit Application'
+                    "Submit Application"
                   )}
                 </button>
               </div>

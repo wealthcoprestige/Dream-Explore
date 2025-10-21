@@ -1,13 +1,12 @@
-import OpportunityDetailPage from '@/components/LandingPage/OpportunityDetailPage'
-import React from 'react'
+import React, { Suspense } from "react";
+import DetailsPageContent from "./page-content";
 
-function page() {
+function DetailsPage() {
   return (
-    <div>
-        <OpportunityDetailPage />
-
-    </div>
-  )
+    <Suspense fallback={<div>Loading...</div>}>
+      <DetailsPageContent />
+    </Suspense>
+  );
 }
 
-export default page
+export default DetailsPage;
