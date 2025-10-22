@@ -35,6 +35,21 @@ interface Applicant {
   education: string;
 }
 
+interface Campaign {
+  id: string;
+  title: string;
+  image: string;
+  location: string;
+  country: string;
+  city: string;
+  category: {
+    name: string;
+  };
+  employment_type: string;
+  description: string;
+  duration: string;
+}
+
 interface Application {
   id: string;
   updated_at: string;
@@ -47,7 +62,7 @@ interface Application {
   status: string;
   qualification: string;
   applicant: string;
-  campaign: string;
+  campaign: Campaign; // Updated to be a Campaign object
 }
 
 interface Appointment {
@@ -95,6 +110,7 @@ function ApplicantDashboard() {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [otherOpportunities, setOtherOpportunities] = useState<Campaign[]>([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -104,8 +120,22 @@ function ApplicantDashboard() {
     try {
       setLoading(true);
       setError(null);
-      const data = await api.get<DashboardData>("dashboard/applicant/");
-      setDashboardData(data); // Assuming api.get returns the data directly
+      const [dashboardResponse, campaignsResponse] = await Promise.all([
+        api.get<DashboardData>("dashboard/applicant/"),
+        api.get<{ results: Campaign[] }>("/campaigns/"),
+      ]);
+
+      setDashboardData(dashboardResponse);
+
+      // Filter out campaigns the user has already applied to
+      const appliedCampaignIds = new Set(
+        dashboardResponse.applicant_applicantions.map((app) => app.campaign.id)
+      );
+
+      const filteredCampaigns = campaignsResponse.results.filter(
+        (campaign) => !appliedCampaignIds.has(campaign.id)
+      );
+      setOtherOpportunities(filteredCampaigns);
     } catch (err) {
       console.error("Failed to fetch dashboard data:", err);
       if (err instanceof AxiosError) {
@@ -121,6 +151,13 @@ function ApplicantDashboard() {
     }
   };
 
+  // Helper function to get full image URL
+  const getImageUrl = (imagePath: string | undefined): string => {
+    if (!imagePath)
+      return "https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?semt=ais_hybrid&w=740&q=80"; // Fallback image
+    if (imagePath.startsWith("http")) return imagePath;
+    return `http://127.0.0.1:8000${imagePath}`;
+  };
   // Calculate statistics from the API data
   const calculateStatistics = () => {
     if (!dashboardData) return null;
@@ -282,7 +319,7 @@ function ApplicantDashboard() {
               <div className="relative">
                 <button className="flex items-center space-x-3 bg-white border border-gray-200 rounded-xl px-4 py-2 hover:shadow-md transition-all duration-300">
                   <Image
-                    src={applicant.profile_photo || "/default-avatar.png"}
+                    src={getImageUrl(applicant.profile_photo)}
                     alt="Profile"
                     width={32}
                     height={32}
@@ -320,7 +357,7 @@ function ApplicantDashboard() {
               <div className="flex flex-col space-y-4">
                 <button className="flex items-center space-x-3 p-3 rounded-xl hover:bg-blue-50 transition-colors duration-300">
                   <Image
-                    src={applicant.profile_photo || "/default-avatar.png"}
+                    src={getImageUrl(applicant.profile_photo)}
                     alt="Profile"
                     width={40}
                     height={40}
@@ -373,7 +410,7 @@ function ApplicantDashboard() {
             <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
               <div className="text-center">
                 <Image
-                  src={applicant.profile_photo || "/default-avatar.png"}
+                  src={getImageUrl(applicant.profile_photo)}
                   alt="Profile"
                   width={80}
                   height={80}
@@ -495,9 +532,9 @@ function ApplicantDashboard() {
                     </h3>
                     <button
                       onClick={() => setActiveTab("applications")}
-                      className="text-blue-600 hover:text-blue-800 font-semibold text-sm"
+                      className="text-blue-600 hover:text-blue-800 font-semibold text-sm flex items-center"
                     >
-                      View All
+                      View All <i className="fas fa-arrow-right ml-2"></i>
                     </button>
                   </div>
                   <div className="space-y-4">
@@ -507,20 +544,17 @@ function ApplicantDashboard() {
                         className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-200 rounded-xl hover:shadow-md transition-all duration-300"
                       >
                         <div className="flex items-center space-x-4 mb-3 sm:mb-0">
-                          <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center ${getStatusColor(
-                              application.status
-                            )}`}
-                          >
-                            <i
-                              className={`${getStatusIcon(
-                                application.status
-                              )} text-sm`}
-                            ></i>
-                          </div>
+                          <Image
+                            src={getImageUrl(application.campaign.image)}
+                            alt={application.campaign.title || "Campaign"}
+                            width={48}
+                            height={48}
+                            className="w-12 h-12 rounded-lg object-cover"
+                          />
                           <div>
                             <h4 className="font-semibold text-gray-800 text-sm sm:text-base">
-                              Application #{application.application_id}
+                              {application.campaign_details?.title ||
+                                `Application #${application.application_id}`}
                             </h4>
                             <p className="text-gray-600 text-xs sm:text-sm">
                               Submitted{" "}
@@ -601,7 +635,7 @@ function ApplicantDashboard() {
             {activeTab === "applications" && (
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-6">
-                  All Applications
+                  All Applications ({applicant_applicantions.length})
                 </h3>
                 <div className="space-y-4">
                   {applicant_applicantions.map((application) => (
@@ -612,14 +646,24 @@ function ApplicantDashboard() {
                     >
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
                         <div className="flex-1">
-                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3">
-                            <div>
-                              <h4 className="text-base sm:text-lg font-semibold text-gray-800">
-                                Application #{application.application_id}
-                              </h4>
-                              <p className="text-gray-600 text-sm">
-                                Campaign: {application.campaign}
-                              </p>
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3">
+                            <div className="flex items-center space-x-4">
+                              <Image
+                                src={getImageUrl(application.campaign.image)}
+                                alt={application.campaign.title || "Campaign"}
+                                width={48}
+                                height={48}
+                                className="w-12 h-12 rounded-lg object-cover"
+                              />
+                              <div>
+                                <h4 className="text-base sm:text-lg font-semibold text-gray-800">
+                                  {application.campaign.title ||
+                                    `Application #${application.application_id}`}
+                                </h4>
+                                <p className="text-gray-600 text-sm">
+                                  {application.campaign.location}
+                                </p>
+                              </div>
                             </div>
                             <span
                               className={`px-2 py-1 rounded-full text-xs font-medium mt-2 sm:mt-0 ${getStatusColor(
@@ -668,6 +712,64 @@ function ApplicantDashboard() {
                       </div>
                     </div>
                   ))}
+                </div>
+
+                {/* Other Opportunities Section */}
+                <div className="mt-8">
+                  <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-6">
+                    Other Opportunities You Might Like
+                  </h3>
+                  {otherOpportunities.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {otherOpportunities.map((opportunity) => (
+                        <div
+                          key={opportunity.id}
+                          className="bg-white rounded-2xl shadow-lg overflow-hidden hover:-translate-y-1 hover:shadow-xl transition-all duration-300 group border border-gray-100"
+                        >
+                          <div className="relative h-40 overflow-hidden">
+                            <Image
+                              src={getImageUrl(opportunity.image)}
+                              alt={opportunity.title}
+                              width={400}
+                              height={160}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            />
+                            <div className="absolute top-3 right-3 bg-blue-800 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                              {opportunity.category.name}
+                            </div>
+                          </div>
+                          <div className="p-5">
+                            <h4 className="text-md font-bold text-gray-800 mb-2 line-clamp-2">
+                              {opportunity.title}
+                            </h4>
+                            <div className="flex justify-between text-gray-500 text-xs mb-3">
+                              <span className="flex items-center">
+                                <i className="fas fa-map-marker-alt mr-2 text-blue-600"></i>
+                                {opportunity.location}
+                              </span>
+                              <span className="flex items-center">
+                                <i className="fas fa-clock mr-2 text-blue-600"></i>
+                                {opportunity.duration}
+                              </span>
+                            </div>
+                            <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                              {opportunity.description}
+                            </p>
+                            <button className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-300 text-sm">
+                              View Details
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-10 bg-gray-50 rounded-xl">
+                      <p className="text-gray-600">
+                        You've applied to all available opportunities. Check
+                        back later!
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
