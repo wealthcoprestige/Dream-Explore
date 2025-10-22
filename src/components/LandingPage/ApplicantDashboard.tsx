@@ -332,7 +332,6 @@ function ApplicantDashboard() {
                 </button>
               </div>
             </div>
-
             {/* Mobile Menu Button */}
             <div className="flex items-center space-x-2 md:hidden">
               <button className="bg-gradient-to-r from-blue-800 to-blue-600 text-white px-3 py-2 rounded-full font-semibold text-sm">
