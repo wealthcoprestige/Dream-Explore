@@ -140,6 +140,10 @@ function HeroPage() {
     router.push("/accounts/login");
   };
 
+  const handleBookAppointment = () => {
+    router.push("/book-interview");
+  };
+
   const mappedCampaigns = campaigns.map((campaign) => ({
     id: campaign.id,
     title: campaign.title,
@@ -315,8 +319,11 @@ function HeroPage() {
                   Login
                 </div>
               )}
-              <div className="bg-gradient-to-r from-blue-800 to-blue-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300">
-                Get Started
+              <div
+                onClick={handleBookAppointment}
+                className="bg-gradient-to-r from-blue-800 to-blue-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+              >
+                Book an Appointment
               </div>
             </div>
             <div className="md:hidden text-2xl">
