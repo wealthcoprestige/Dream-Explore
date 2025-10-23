@@ -37,6 +37,7 @@ function HeroPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
 
   const extractDataFromResponse = <T,>(response: unknown): T[] => {
@@ -132,6 +133,33 @@ function HeroPage() {
     return deadline.toISOString().split("T")[0];
   };
 
+  const getDaysRemaining = (deadline: string): number => {
+    const today = new Date();
+    const deadlineDate = new Date(deadline);
+    const diffTime = deadlineDate.getTime() - today.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  const getExperienceLevelColor = (level: string): string => {
+    const colors: Record<string, string> = {
+      entry: "from-green-500 to-green-600",
+      mid: "from-blue-500 to-blue-600",
+      senior: "from-purple-500 to-purple-600",
+      student: "from-orange-500 to-orange-600",
+    };
+    return colors[level] || "from-gray-500 to-gray-600";
+  };
+
+  const getEmploymentTypeIcon = (type: string): string => {
+    const icons: Record<string, string> = {
+      internship: "fas fa-graduation-cap",
+      full_time: "fas fa-briefcase",
+      contract: "fas fa-file-contract",
+      temporary: "fas fa-clock",
+    };
+    return icons[type] || "fas fa-briefcase";
+  };
+
   const handleApplyNow = (campaignId: number) => {
     router.push(`/details?campaign_id=${campaignId}`);
   };
@@ -142,6 +170,17 @@ function HeroPage() {
 
   const handleBookAppointment = () => {
     router.push("/book-interview");
+  };
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const handleMobileNavClick = (path?: string) => {
+    setIsMobileMenuOpen(false);
+    if (path) {
+      setTimeout(() => router.push(path), 300);
+    }
   };
 
   const mappedCampaigns = campaigns.map((campaign) => ({
@@ -159,6 +198,7 @@ function HeroPage() {
     country: campaign.country,
     city: campaign.city,
     status: campaign.status,
+    days_remaining: getDaysRemaining(getDeadline(campaign.created_at)),
   }));
 
   // SIMPLE FILTERING LOGIC - Exact matching
@@ -274,18 +314,270 @@ function HeroPage() {
     );
   }
 
+  // Campaign Card Component
+  const CampaignCard = ({ opportunity, isHealthcare = false }) => {
+    const cardColors = isHealthcare
+      ? {
+          gradient: "from-green-500 to-green-600",
+          text: "text-green-600",
+          bg: "bg-green-50",
+        }
+      : {
+          gradient: "from-blue-500 to-blue-600",
+          text: "text-blue-600",
+          bg: "bg-blue-50",
+        };
+
+    return (
+      <div className="bg-white rounded-2xl shadow-xl overflow-hidden hover:-translate-y-2 hover:shadow-2xl transition-all duration-400 group border border-gray-100">
+        {/* Image Header with Overlay */}
+        <div className="relative h-48 overflow-hidden">
+          <Image
+            src={
+              opportunity.image ||
+              "https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1470&q=80"
+            }
+            alt={opportunity.title}
+            width={400}
+            height={192}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+
+          {/* Category Badge */}
+          <div
+            className={`absolute top-4 right-4 bg-gradient-to-r ${cardColors.gradient} text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg`}
+          >
+            {opportunity.type}
+          </div>
+
+          {/* Experience Level Badge */}
+          <div
+            className={`absolute top-4 left-4 bg-white/90 backdrop-blur-sm ${cardColors.text} px-3 py-1 rounded-full text-xs font-semibold`}
+          >
+            <i
+              className={`fas ${getEmploymentTypeIcon(
+                opportunity.employment_type
+              )} mr-1`}
+            ></i>
+            {opportunity.employment_type?.replace("_", " ").toUpperCase()}
+          </div>
+
+          {/* Days Remaining */}
+          <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded-full text-xs backdrop-blur-sm">
+            <i className="fas fa-clock mr-1"></i>
+            {opportunity.days_remaining > 0
+              ? `${opportunity.days_remaining} days left`
+              : "Closing soon"}
+          </div>
+        </div>
+
+        {/* Card Content */}
+        <div className="p-6">
+          {/* Title and Save Button */}
+          <div className="flex justify-between items-start mb-3">
+            <h3 className="text-xl font-bold text-gray-800 line-clamp-2 flex-1 mr-3">
+              {opportunity.title}
+            </h3>
+            <div
+              onClick={() => toggleSaveOpportunity(opportunity.id)}
+              className={`transition-all duration-300 cursor-pointer p-2 rounded-full ${
+                savedOpportunities.has(opportunity.id)
+                  ? `${cardColors.text} bg-${cardColors.bg.split("-")[1]}-50`
+                  : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              <i
+                className={`${
+                  savedOpportunities.has(opportunity.id) ? "fas" : "far"
+                } fa-bookmark text-lg`}
+              ></i>
+            </div>
+          </div>
+
+          {/* Description */}
+          <p className="text-gray-600 mb-4 line-clamp-3 text-sm leading-relaxed">
+            {opportunity.description}
+          </p>
+
+          {/* Info Grid */}
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="flex items-center text-gray-600 text-sm">
+              <i className="fas fa-map-marker-alt mr-2 text-gray-400"></i>
+              <span className="truncate">{opportunity.location}</span>
+            </div>
+            <div className="flex items-center text-gray-600 text-sm">
+              <i className="fas fa-clock mr-2 text-gray-400"></i>
+              <span>{opportunity.duration}</span>
+            </div>
+            <div className="flex items-center text-gray-600 text-sm">
+              <i className="fas fa-dollar-sign mr-2 text-gray-400"></i>
+              <span>{opportunity.salary || "Competitive"}</span>
+            </div>
+            <div className="flex items-center text-gray-600 text-sm">
+              <i className={`fas fa-user-tie mr-2 text-gray-400`}></i>
+              <span className="capitalize">{opportunity.experience_level}</span>
+            </div>
+          </div>
+
+          {/* Progress Bar for Urgency */}
+          {opportunity.days_remaining < 7 && (
+            <div className="mb-4">
+              <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <span>Apply soon</span>
+                <span>{opportunity.days_remaining} days left</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div
+                  className={`bg-red-500 h-1.5 rounded-full transition-all duration-500`}
+                  style={{
+                    width: `${Math.max(
+                      10,
+                      (opportunity.days_remaining / 7) * 100
+                    )}%`,
+                  }}
+                ></div>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+            <button
+              onClick={() => handleApplyNow(opportunity.id)}
+              className={`bg-gradient-to-r ${cardColors.gradient} hover:shadow-lg transform hover:-translate-y-0.5 text-white px-6 py-2.5 rounded-full font-semibold transition-all duration-300 flex items-center group`}
+            >
+              Apply Now
+              <i className="fas fa-arrow-right ml-2 text-xs group-hover:translate-x-1 transition-transform duration-300"></i>
+            </button>
+            <button className="text-gray-500 hover:text-gray-700 transition-colors duration-300 flex items-center text-sm">
+              <i className="far fa-eye mr-1"></i>
+              Details
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen">
-      <header className="fixed w-full top-0 z-50 bg-white bg-opacity-95 shadow-lg transition-all duration-300">
+      {/* Mobile Menu Overlay */}
+      <div
+        className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-50 transition-opacity duration-300 md:hidden ${
+          isMobileMenuOpen
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
+        }`}
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
+
+      {/* Mobile Navigation Menu */}
+      <div
+        className={`fixed top-0 left-0 h-full w-80 bg-gradient-to-b from-blue-900 to-blue-700 text-white z-50 transform transition-transform duration-300 ease-in-out md:hidden ${
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="p-6 pt-20">
+          <div className="mb-8">
+            <div className="flex items-center text-2xl font-bold mb-6">
+              <i className="fas fa-globe-americas mr-2"></i>
+              DreamExplore
+            </div>
+            <p className="text-blue-100 text-sm">
+              Your gateway to global opportunities
+            </p>
+          </div>
+
+          <nav className="space-y-4">
+            {[
+              { name: "Home", path: "/" },
+              { name: "Services", path: "/services" },
+              { name: "Jobs", path: "/jobs" },
+              { name: "Schools", path: "/schools" },
+              { name: "Scholarships", path: "/scholarships" },
+              { name: "Tourism", path: "/tourism" },
+            ].map((item) => (
+              <div
+                key={item.name}
+                onClick={() => handleMobileNavClick(item.path)}
+                className="text-lg font-medium py-3 px-4 rounded-xl hover:bg-white/10 transition-all duration-300 cursor-pointer flex items-center group"
+              >
+                <span className="group-hover:translate-x-2 transition-transform duration-300">
+                  {item.name}
+                </span>
+                <i className="fas fa-chevron-right ml-auto text-sm opacity-0 group-hover:opacity-100 transition-all duration-300"></i>
+              </div>
+            ))}
+          </nav>
+
+          <div className="absolute bottom-8 left-6 right-6 space-y-4">
+            {isAuthenticated ? (
+              <div
+                onClick={() => handleMobileNavClick("/dashboard")}
+                className="bg-white/10 hover:bg-white/20 py-4 px-6 rounded-xl font-semibold text-center transition-all duration-300 cursor-pointer"
+              >
+                Dashboard
+              </div>
+            ) : (
+              <div
+                onClick={() => handleMobileNavClick("/accounts/login")}
+                className="bg-white/10 hover:bg-white/20 py-4 px-6 rounded-xl font-semibold text-center transition-all duration-300 cursor-pointer"
+              >
+                Login
+              </div>
+            )}
+            <div
+              onClick={() => handleMobileNavClick("/book-interview")}
+              className="bg-gradient-to-r from-blue-500 to-blue-400 hover:from-blue-400 hover:to-blue-300 py-4 px-6 rounded-xl font-semibold text-center shadow-lg transition-all duration-300 cursor-pointer"
+            >
+              Book an Appointment
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <header className="fixed w-full top-0 z-40 bg-white bg-opacity-95 shadow-lg transition-all duration-300">
         <div className="container mx-auto px-4">
           <nav className="flex justify-between items-center py-5">
+            {/* Mobile Menu Button - Top Left */}
+            <div className="md:hidden">
+              <button
+                onClick={toggleMobileMenu}
+                className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 to-blue-500 shadow-lg shadow-blue-500/40 flex items-center justify-center text-white hover:shadow-blue-500/60 hover:scale-105 transition-all duration-300 relative z-50"
+                aria-label="Toggle menu"
+              >
+                <div className="relative w-6 h-6">
+                  <span
+                    className={`absolute top-1/2 left-1/2 w-4 h-0.5 bg-white transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
+                      isMobileMenuOpen ? "rotate-45" : "-translate-y-1.5"
+                    }`}
+                  />
+                  <span
+                    className={`absolute top-1/2 left-1/2 w-4 h-0.5 bg-white transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
+                      isMobileMenuOpen ? "opacity-0" : "opacity-100"
+                    }`}
+                  />
+                  <span
+                    className={`absolute top-1/2 left-1/2 w-4 h-0.5 bg-white transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
+                      isMobileMenuOpen ? "-rotate-45" : "translate-y-1.5"
+                    }`}
+                  />
+                </div>
+              </button>
+            </div>
+
+            {/* Logo - Centered on mobile, left on desktop */}
             <div
-              className="flex items-center text-2xl font-bold text-blue-800 cursor-pointer"
+              className="flex items-center text-2xl font-bold text-blue-800 cursor-pointer md:ml-0 mx-auto md:mx-0"
               onClick={() => router.push("/")}
             >
               <i className="fas fa-globe-americas mr-2 text-2xl"></i>
-              DreamExplore
+              <span className="hidden sm:inline">DreamExplore</span>
+              <span className="sm:hidden">DE</span>
             </div>
+
+            {/* Desktop Navigation */}
             <div className="hidden md:flex space-x-8">
               {[
                 "Home",
@@ -303,6 +595,8 @@ function HeroPage() {
                 </div>
               ))}
             </div>
+
+            {/* Desktop Auth Buttons */}
             <div className="hidden md:flex items-center">
               {isAuthenticated ? (
                 <div
@@ -326,13 +620,14 @@ function HeroPage() {
                 Book an Appointment
               </div>
             </div>
-            <div className="md:hidden text-2xl">
-              <i className="fas fa-bars"></i>
-            </div>
+
+            {/* Placeholder for mobile to balance layout */}
+            <div className="w-12 md:hidden" />
           </nav>
         </div>
       </header>
 
+      {/* Rest of the component remains exactly the same */}
       <section className="relative h-[70vh] mt-20 overflow-hidden">
         <div className="relative h-full w-full">
           {slides.map((slide, index) => (
@@ -390,9 +685,13 @@ function HeroPage() {
 
       {/* Healthcare Professionals Section */}
       {healthcareCampaigns.length > 0 && (
-        <section className="py-16 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <section className="py-16 bg-gradient-to-r from-green-50 to-emerald-50">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
+              <div className="inline-flex items-center bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+                <i className="fas fa-heartbeat mr-2"></i>
+                Healthcare Opportunities
+              </div>
               <h2 className="text-4xl font-bold text-gray-800 mb-4">
                 Healthcare Professionals
               </h2>
@@ -420,85 +719,11 @@ function HeroPage() {
                       {healthcareCampaigns
                         .slice(slideIndex * 3, slideIndex * 3 + 3)
                         .map((opportunity) => (
-                          <div
+                          <CampaignCard
                             key={opportunity.id}
-                            className="bg-white rounded-2xl shadow-xl overflow-hidden hover:-translate-y-2 hover:shadow-2xl transition-all duration-400 group"
-                          >
-                            <div className="relative h-48 overflow-hidden">
-                              <Image
-                                src={
-                                  opportunity.image ||
-                                  "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?auto=format&fit=crop&w=1470&q=80"
-                                }
-                                alt={opportunity.title}
-                                width={400}
-                                height={192}
-                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                              />
-                              <div className="absolute top-4 right-4 bg-green-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                                Healthcare
-                              </div>
-                              <div className="absolute top-4 left-4 bg-white/20 backdrop-blur-sm text-white px-2 py-1 rounded text-xs">
-                                Apply by{" "}
-                                {new Date(
-                                  opportunity.deadline
-                                ).toLocaleDateString()}
-                              </div>
-                            </div>
-                            <div className="p-6">
-                              <h3 className="text-xl font-bold text-gray-800 mb-3 line-clamp-2">
-                                {opportunity.title}
-                              </h3>
-                              <p className="text-gray-600 mb-4 line-clamp-3">
-                                {opportunity.description}
-                              </p>
-                              <div className="space-y-2 mb-4">
-                                <div className="flex justify-between text-gray-500 text-sm">
-                                  <span className="flex items-center">
-                                    <i className="fas fa-map-marker-alt mr-2 text-green-600"></i>
-                                    {opportunity.location}
-                                  </span>
-                                  <span className="flex items-center">
-                                    <i className="fas fa-clock mr-2 text-green-600"></i>
-                                    {opportunity.duration}
-                                  </span>
-                                </div>
-                                <div className="text-sm text-gray-500">
-                                  <span className="flex items-center">
-                                    <i className="fas fa-dollar-sign mr-2 text-green-600"></i>
-                                    {opportunity.salary || "Competitive Salary"}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <div
-                                  onClick={() => handleApplyNow(opportunity.id)}
-                                  className="text-green-600 font-semibold hover:text-green-800 transition-colors duration-300 flex items-center cursor-pointer"
-                                >
-                                  Apply Now
-                                  <i className="fas fa-arrow-right ml-2 text-xs"></i>
-                                </div>
-                                <div
-                                  onClick={() =>
-                                    toggleSaveOpportunity(opportunity.id)
-                                  }
-                                  className={`transition-colors duration-300 cursor-pointer ${
-                                    savedOpportunities.has(opportunity.id)
-                                      ? "text-green-600"
-                                      : "text-gray-400 hover:text-green-600"
-                                  }`}
-                                >
-                                  <i
-                                    className={`${
-                                      savedOpportunities.has(opportunity.id)
-                                        ? "fas"
-                                        : "far"
-                                    } fa-bookmark`}
-                                  ></i>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                            opportunity={opportunity}
+                            isHealthcare={true}
+                          />
                         ))}
                     </div>
                   ))}
@@ -542,19 +767,26 @@ function HeroPage() {
         </section>
       )}
 
-      <section className="py-24 bg-white">
+      {/* Featured Opportunities Section */}
+      <section className="py-24 bg-gradient-to-br from-gray-50 to-blue-50">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-10">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-800 mb-4">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-12">
+            <div className="flex-1">
+              <div className="inline-flex items-center bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+                <i className="fas fa-star mr-2"></i>
                 Featured Opportunities
+              </div>
+              <h2 className="text-4xl font-bold text-gray-800 mb-4">
+                Discover Your Next Adventure
               </h2>
-              <p className="text-gray-600 max-w-2xl">
-                Discover hand-picked opportunities from around the world
+              <p className="text-xl text-gray-600 max-w-2xl">
+                Hand-picked global opportunities tailored to your skills and
+                aspirations
               </p>
             </div>
-            <div className="flex flex-wrap gap-2 mt-4 lg:mt-0">
-              {/* EXACTLY AS BEFORE - All the filter buttons */}
+
+            {/* Filter Tabs */}
+            <div className="flex flex-wrap gap-2 mt-6 lg:mt-0">
               {[
                 "All",
                 "Healthcare",
@@ -566,17 +798,17 @@ function HeroPage() {
                 "School",
                 "Scholarship",
               ].map((filter) => (
-                <div
+                <button
                   key={filter}
                   onClick={() => setActiveFilter(filter)}
-                  className={`px-5 py-2 rounded-full font-medium transition-all duration-300 cursor-pointer ${
+                  className={`px-5 py-2.5 rounded-full font-medium transition-all duration-300 cursor-pointer border ${
                     activeFilter === filter
-                      ? "bg-blue-800 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-blue-800 hover:text-white"
+                      ? "bg-blue-800 text-white border-blue-800 shadow-lg shadow-blue-500/25"
+                      : "bg-white text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-800"
                   }`}
                 >
                   {filter}
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -584,98 +816,36 @@ function HeroPage() {
           {filteredOpportunities.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
               {filteredOpportunities.map((opportunity) => (
-                <div
-                  key={opportunity.id}
-                  className="bg-white rounded-2xl shadow-xl overflow-hidden hover:-translate-y-2 hover:shadow-2xl transition-all duration-400 group border border-gray-100"
-                >
-                  <div className="relative h-48 overflow-hidden">
-                    <Image
-                      src={
-                        opportunity.image ||
-                        "https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1470&q=80"
-                      }
-                      alt={opportunity.title}
-                      width={400}
-                      height={192}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                    <div className="absolute top-4 right-4 bg-blue-800 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                      {opportunity.type}
-                    </div>
-                    <div className="absolute top-4 left-4 bg-white/20 backdrop-blur-sm text-white px-2 py-1 rounded text-xs">
-                      Apply by{" "}
-                      {new Date(opportunity.deadline).toLocaleDateString()}
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold text-gray-800 mb-3 line-clamp-2">
-                      {opportunity.title}
-                    </h3>
-                    <p className="text-gray-600 mb-4 line-clamp-3">
-                      {opportunity.description}
-                    </p>
-                    <div className="space-y-3 mb-4">
-                      <div className="flex justify-between text-gray-500 text-sm">
-                        <span className="flex items-center">
-                          <i className="fas fa-map-marker-alt mr-2 text-blue-600"></i>
-                          {opportunity.location}
-                        </span>
-                        <span className="flex items-center">
-                          <i className="fas fa-clock mr-2 text-blue-600"></i>
-                          {opportunity.duration}
-                        </span>
-                      </div>
-                      <div className="text-sm text-gray-500 flex items-center">
-                        <i className="fas fa-dollar-sign mr-2 text-blue-600"></i>
-                        {opportunity.salary || "Salary not specified"}
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center pt-4 border-t border-gray-100">
-                      <div
-                        onClick={() => handleApplyNow(opportunity.id)}
-                        className="text-blue-600 font-semibold hover:text-blue-800 transition-colors duration-300 flex items-center cursor-pointer group"
-                      >
-                        Apply Now
-                        <i className="fas fa-arrow-right ml-2 text-xs group-hover:translate-x-1 transition-transform duration-300"></i>
-                      </div>
-                      <div
-                        onClick={() => toggleSaveOpportunity(opportunity.id)}
-                        className={`transition-colors duration-300 cursor-pointer group ${
-                          savedOpportunities.has(opportunity.id)
-                            ? "text-blue-600"
-                            : "text-gray-400 hover:text-blue-600"
-                        }`}
-                      >
-                        <i
-                          className={`${
-                            savedOpportunities.has(opportunity.id)
-                              ? "fas"
-                              : "far"
-                          } fa-bookmark group-hover:scale-110 transition-transform duration-300`}
-                        ></i>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <CampaignCard key={opportunity.id} opportunity={opportunity} />
               ))}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <div className="text-gray-400 text-6xl mb-4">📭</div>
-              <h3 className="text-xl font-semibold text-gray-600 mb-2">
-                No opportunities found
-              </h3>
-              <p className="text-gray-500">
-                Try selecting a different filter or check back later for new
-                opportunities.
-              </p>
+            <div className="text-center py-16">
+              <div className="bg-white rounded-2xl shadow-lg p-12 max-w-md mx-auto">
+                <div className="text-gray-400 text-6xl mb-4">🔍</div>
+                <h3 className="text-2xl font-bold text-gray-700 mb-3">
+                  No opportunities found
+                </h3>
+                <p className="text-gray-500 mb-6">
+                  Try selecting a different filter or check back later for new
+                  opportunities.
+                </p>
+                <button
+                  onClick={() => setActiveFilter("All")}
+                  className="bg-blue-800 text-white px-6 py-3 rounded-full font-semibold hover:bg-blue-700 transition-colors duration-300"
+                >
+                  Show All Opportunities
+                </button>
+              </div>
             </div>
           )}
+
+          {/* Load More Button */}
           <div className="text-center">
-            <div className="bg-gradient-to-r from-blue-800 to-blue-500 text-white px-8 py-4 rounded-full font-semibold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300 inline-flex items-center cursor-pointer">
+            <button className="bg-gradient-to-r from-blue-800 to-blue-600 text-white px-8 py-4 rounded-full font-semibold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300 inline-flex items-center">
+              <i className="fas fa-sync-alt mr-2"></i>
               Load More Opportunities
-              <i className="fas fa-arrow-down ml-2"></i>
-            </div>
+            </button>
           </div>
         </div>
       </section>
