@@ -1,8 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { AxiosError } from "axios";
-import api from "../axios/axiosInsatance";
+import api, { authApi } from "../axios/axiosInsatance";
 
 interface User {
   id: string;
@@ -112,6 +113,7 @@ function ApplicantDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [otherOpportunities, setOtherOpportunities] = useState<Campaign[]>([]);
 
+  const router = useRouter();
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -225,6 +227,25 @@ function ApplicantDashboard() {
     return statusMap[status] || status;
   };
 
+  const handleLogout = async () => {
+    try {
+      // Assuming authApi is configured for the /accounts/ base URL
+      // and the api instance interceptor adds the token.
+      await api.post("http://127.0.0.1:8000/accounts/logout/");
+    } catch (error) {
+      console.error("Logout failed, but clearing session anyway.", error);
+    } finally {
+      // Always clear local storage and redirect
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      router.push("/accounts/login");
+    }
+  };
+
+  const handleViewDetails = (campaignId: string) => {
+    router.push(`/details?campaign_id=${campaignId}`);
+  };
+
   const handlePayment = (bill: Billing) => {
     setSelectedBill(bill);
     setShowPaymentModal(true);
@@ -302,22 +323,28 @@ function ApplicantDashboard() {
       <header className="bg-white shadow-sm sticky top-0 z-40">
         <div className="container mx-auto px-4">
           <nav className="flex justify-between items-center py-4">
-            <a
-              href="#"
+            <button
+              onClick={() => router.push("/")}
               className="flex items-center text-xl md:text-2xl font-bold text-blue-800"
             >
               <i className="fas fa-globe-americas mr-2 text-xl md:text-2xl"></i>
               <span className="hidden sm:inline">DreamExplore</span>
               <span className="sm:hidden">DE</span>
-            </a>
+            </button>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
-              <button className="bg-gradient-to-r from-blue-800 to-blue-600 text-white px-4 py-2 rounded-full font-semibold shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-sm">
+              <button
+                onClick={() => router.push("/")}
+                className="bg-gradient-to-r from-blue-800 to-blue-600 text-white px-4 py-2 rounded-full font-semibold shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-sm"
+              >
                 Find Opportunities
               </button>
               <div className="relative">
-                <button className="flex items-center space-x-3 bg-white border border-gray-200 rounded-xl px-4 py-2 hover:shadow-md transition-all duration-300">
+                <button
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className="flex items-center space-x-3 bg-white border border-gray-200 rounded-xl px-4 py-2 hover:shadow-md transition-all duration-300"
+                >
                   <Image
                     src={getImageUrl(applicant.profile_photo)}
                     alt="Profile"
@@ -330,6 +357,24 @@ function ApplicantDashboard() {
                   </span>
                   <i className="fas fa-chevron-down text-gray-400"></i>
                 </button>
+                {isMobileMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 z-50">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors"
+                    >
+                      <i className="fas fa-sign-out-alt mr-2"></i>
+                      Logout
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("profile")}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    >
+                      <i className="fas fa-user-circle mr-2"></i>
+                      View Profile
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
             {/* Mobile Menu Button */}
@@ -369,8 +414,18 @@ function ApplicantDashboard() {
                     <div className="text-sm text-gray-600">View Profile</div>
                   </div>
                 </button>
-                <button className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold">
-                  Find New Opportunities
+                <button
+                  onClick={() => router.push("/")}
+                  className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold"
+                >
+                  Find Opportunities
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="w-full bg-red-600 text-white py-3 rounded-xl font-semibold mt-4"
+                >
+                  <i className="fas fa-sign-out-alt mr-2"></i>
+                  Logout
                 </button>
               </div>
             </div>
@@ -441,6 +496,18 @@ function ApplicantDashboard() {
                   <span>{applicant.location}</span>
                 </div>
               </div>
+            </div>
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <h4 className="font-bold text-gray-800 mb-4">
+                Schedule an Interview
+              </h4>
+              <button
+                onClick={() => router.push("/book-interview")}
+                className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-all duration-300 text-sm"
+              >
+                <i className="fas fa-calendar-plus mr-2"></i>
+                Book Interview
+              </button>
             </div>
 
             {/* Quick Stats */}
@@ -754,7 +821,10 @@ function ApplicantDashboard() {
                             <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                               {opportunity.description}
                             </p>
-                            <button className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-300 text-sm">
+                            <button
+                              onClick={() => handleViewDetails(opportunity.id)}
+                              className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-300 text-sm"
+                            >
                               View Details
                             </button>
                           </div>

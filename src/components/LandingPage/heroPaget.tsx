@@ -36,6 +36,7 @@ function HeroPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
 
   const extractDataFromResponse = <T,>(response: unknown): T[] => {
@@ -82,6 +83,13 @@ function HeroPage() {
       }
     };
     fetchData();
+
+    // Check for authentication token
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("access_token")
+        : null;
+    setIsAuthenticated(!!token);
   }, []);
 
   // Helper function to get full image URL
@@ -292,12 +300,21 @@ function HeroPage() {
               ))}
             </div>
             <div className="hidden md:flex items-center">
-              <div
-                onClick={handleLogin}
-                className="text-gray-800 font-medium mr-5 hover:text-blue-800 transition-colors duration-300 cursor-pointer"
-              >
-                Login
-              </div>
+              {isAuthenticated ? (
+                <div
+                  onClick={() => router.push("/dashboard")}
+                  className="text-gray-800 font-medium mr-5 hover:text-blue-800 transition-colors duration-300 cursor-pointer"
+                >
+                  Dashboard
+                </div>
+              ) : (
+                <div
+                  onClick={handleLogin}
+                  className="text-gray-800 font-medium mr-5 hover:text-blue-800 transition-colors duration-300 cursor-pointer"
+                >
+                  Login
+                </div>
+              )}
               <div className="bg-gradient-to-r from-blue-800 to-blue-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300">
                 Get Started
               </div>

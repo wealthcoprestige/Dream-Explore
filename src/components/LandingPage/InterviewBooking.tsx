@@ -1,7 +1,11 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { AxiosError } from "axios";
+import api from "../axios/axiosInsatance";
 
 // Define TypeScript interfaces
+
 interface Interview {
   id: number;
   jobTitle: string;
@@ -16,7 +20,16 @@ interface Interview {
   meetingLink?: string | null;
 }
 
+interface AvailableSlot {
+  id: string;
+  date: string;
+  time: string;
+  duration_minutes: number;
+  interview_type: string;
+  is_booked: boolean;
+}
 interface TimeSlots {
+  [date: string]: AvailableSlot[];
   [key: string]: string[];
 }
 
@@ -27,7 +40,6 @@ interface Tab {
   count?: number;
 }
 
-// Sample interviews data - moved outside the component
 const sampleInterviews: Interview[] = [
   {
     id: 1,
@@ -54,40 +66,46 @@ function InterviewBooking() {
   const [bookingStep, setBookingStep] = useState(1);
   const [upcomingInterviews, setUpcomingInterviews] = useState<Interview[]>([]);
   const [pastInterviews, setPastInterviews] = useState<Interview[]>([]);
-  const [availableSlots, setAvailableSlots] = useState<TimeSlots>({});
-
-  // Generate available slots for all dates dynamically
-  const generateAvailableSlots = (): TimeSlots => {
-    const slots: TimeSlots = {};
-    const today = new Date();
-
-    for (let i = 0; i < 14; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      const dateKey = date.toISOString().split("T")[0];
-
-      // Generate random time slots for each date
-      slots[dateKey] = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00"];
-    }
-    return slots;
-  };
+  const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    // Initialize available slots when component mounts
-    setAvailableSlots(generateAvailableSlots());
+    const fetchAvailableSlots = async () => {
+      try {
+        const response = await api.get<AvailableSlot[]>(
+          "/available/appointment/slot/"
+        );
+        setAvailableSlots(response.data);
+      } catch (error: any) {
+        console.error("Failed to fetch available slots:", error);
+      }
 
-    const now = new Date();
-    const upcoming = sampleInterviews.filter((interview) => {
-      const interviewDateTime = new Date(`${interview.date}T${interview.time}`);
-      return interviewDateTime > now && interview.status === "scheduled";
-    });
-    const past = sampleInterviews.filter((interview) => {
-      const interviewDateTime = new Date(`${interview.date}T${interview.time}`);
-      return interviewDateTime <= now || interview.status === "completed";
-    });
+      const now = new Date();
+      const upcoming: any = sampleInterviews.filter((interview) => {
+        const interviewDateTime = new Date(
+          `${interview.date}T${interview.time}`
+        );
+        return interviewDateTime > now && interview.status === "scheduled";
+      });
+      const past = sampleInterviews.filter((interview) => {
+        const interviewDateTime = new Date(
+          `${interview.date}T${interview.time}`
+        );
+        return interviewDateTime <= now || interview.status === "completed";
+      });
 
-    setUpcomingInterviews(upcoming);
-    setPastInterviews(past);
+      setUpcomingInterviews(upcoming);
+      setPastInterviews(past);
+
+      // Check for authentication token
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("access_token")
+          : null;
+      setIsAuthenticated(!!token);
+    };
+    fetchAvailableSlots();
   }, []);
 
   const tabs: Tab[] = [
@@ -107,25 +125,21 @@ function InterviewBooking() {
     { value: "in_person", label: "In Person", icon: "fas fa-building" },
   ];
 
-  const getDaysOfWeek = (): Date[] => {
-    const days: Date[] = [];
-    const today = new Date();
-    for (let i = 0; i < 14; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      days.push(date);
-    }
-    return days;
+  // Get unique dates from available slots
+  const getAvailableDates = (): string[] => {
+    const uniqueDates = Array.from(
+      new Set(availableSlots.map((slot) => slot.date))
+    );
+    return uniqueDates.sort(); // Sort dates chronologically
   };
 
-  const formatDateKey = (date: Date): string => {
-    return date.toISOString().split("T")[0];
+  const formatDateKey = (date: string): string => {
+    return date;
   };
 
-  const handleDateSelect = (date: Date) => {
-    const dateString = formatDateKey(date);
-    console.log("Selected date:", dateString);
-    setSelectedDate(dateString);
+  const handleDateSelect = (date: string) => {
+    console.log("Selected date:", date);
+    setSelectedDate(date);
   };
 
   const handleTimeSelect = (time: string) => {
@@ -196,9 +210,21 @@ function InterviewBooking() {
               <i className="fas fa-globe-americas mr-2"></i>
               <span>DreamExplore</span>
             </div>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-full font-semibold">
-              Back to Dashboard
-            </button>
+            {isAuthenticated ? (
+              <button
+                onClick={() => router.push("/dashboard")}
+                className="bg-blue-600 text-white px-4 py-2 rounded-full font-semibold"
+              >
+                Back to Dashboard
+              </button>
+            ) : (
+              <button
+                onClick={() => router.push("/")}
+                className="bg-blue-600 text-white px-4 py-2 rounded-full font-semibold"
+              >
+                Find Opportunities
+              </button>
+            )}
           </nav>
         </div>
       </header>
@@ -278,36 +304,57 @@ function InterviewBooking() {
                         Select a Date
                       </h3>
                       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-6">
-                        {getDaysOfWeek().map((date, index) => {
+                        {getAvailableDates().map((date, index) => {
                           const dateKey = formatDateKey(date);
                           const isSelected = selectedDate === dateKey;
+                          const availableSlotsForDate = availableSlots.filter(
+                            (slot) => slot.date === date && !slot.is_booked
+                          );
 
                           return (
                             <button
                               key={index}
                               onClick={() => handleDateSelect(date)}
+                              disabled={availableSlotsForDate.length === 0}
                               className={`p-3 rounded-lg border-2 text-center transition-all duration-300 ${
                                 isSelected
                                   ? "border-blue-600 bg-blue-50 text-blue-700 shadow-md"
-                                  : "border-gray-200 hover:border-blue-400 hover:shadow-md text-gray-700 bg-white"
+                                  : availableSlotsForDate.length > 0
+                                  ? "border-gray-200 hover:border-blue-400 hover:shadow-md text-gray-700 bg-white"
+                                  : "border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed"
                               }`}
                             >
                               <div className="text-xs font-semibold">
-                                {date.toLocaleDateString("en-US", {
+                                {new Date(date).toLocaleDateString("en-US", {
                                   weekday: "short",
                                 })}
                               </div>
                               <div className="text-base font-bold mt-1">
-                                {date.getDate()}
+                                {new Date(date).getDate()}
                               </div>
                               <div className="text-xs mt-1">
-                                {date.toLocaleDateString("en-US", {
+                                {new Date(date).toLocaleDateString("en-US", {
                                   month: "short",
                                 })}
                               </div>
-                              <div className="text-xs text-green-600 mt-1">
-                                <i className="fas fa-check-circle mr-1"></i>
-                                Available
+                              <div
+                                className={`text-xs mt-1 ${
+                                  availableSlotsForDate.length > 0
+                                    ? "text-green-600"
+                                    : "text-red-500"
+                                }`}
+                              >
+                                {availableSlotsForDate.length > 0 ? (
+                                  <>
+                                    <i className="fas fa-check-circle mr-1"></i>
+                                    Available
+                                  </>
+                                ) : (
+                                  <>
+                                    <i className="fas fa-times-circle mr-1"></i>
+                                    Booked
+                                  </>
+                                )}
                               </div>
                             </button>
                           );
@@ -351,24 +398,32 @@ function InterviewBooking() {
                           {formatDisplayDate(selectedDate)}
                         </h4>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                          {availableSlots[selectedDate]?.map((time, index) => (
-                            <button
-                              key={index}
-                              onClick={() => handleTimeSelect(time)}
-                              className={`p-4 rounded-lg border-2 text-center transition-all duration-300 ${
-                                selectedTime === time
-                                  ? "border-blue-600 bg-blue-50 text-blue-700 shadow-md"
-                                  : "border-gray-200 hover:border-blue-400 hover:shadow-md text-gray-700"
-                              }`}
-                            >
-                              <div className="font-semibold text-base">
-                                {formatTime(time)}
-                              </div>
-                              <div className="text-xs text-gray-500 mt-1">
-                                Available
-                              </div>
-                            </button>
-                          ))}
+                          {availableSlots
+                            .filter(
+                              (slot) =>
+                                slot.date === selectedDate && !slot.is_booked
+                            )
+                            .map((slot, index) => (
+                              <button
+                                key={slot.id}
+                                onClick={() => handleTimeSelect(slot.time)}
+                                className={`p-4 rounded-lg border-2 text-center transition-all duration-300 ${
+                                  selectedTime === slot.time
+                                    ? "border-blue-600 bg-blue-50 text-blue-700 shadow-md"
+                                    : "border-gray-200 hover:border-blue-400 hover:shadow-md text-gray-700"
+                                }`}
+                              >
+                                <div className="font-semibold text-base">
+                                  {formatTime(slot.time)}
+                                </div>
+                                <div className="text-xs text-gray-500 mt-1">
+                                  {slot.duration_minutes} minutes
+                                </div>
+                                <div className="text-xs text-green-600 mt-1">
+                                  Available
+                                </div>
+                              </button>
+                            ))}
                         </div>
                       </div>
 
