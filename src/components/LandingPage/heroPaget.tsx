@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import api from "../axios/axiosInsatance";
+import Header from "./Header";
 
 interface Campaign {
   id: number;
@@ -462,170 +463,7 @@ function HeroPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Mobile Menu Overlay */}
-      <div
-        className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-50 transition-opacity duration-300 md:hidden ${
-          isMobileMenuOpen
-            ? "opacity-100 pointer-events-auto"
-            : "opacity-0 pointer-events-none"
-        }`}
-        onClick={() => setIsMobileMenuOpen(false)}
-      />
-
-      {/* Mobile Navigation Menu */}
-      <div
-        className={`fixed top-0 left-0 h-full w-80 bg-gradient-to-b from-blue-900 to-blue-700 text-white z-50 transform transition-transform duration-300 ease-in-out md:hidden ${
-          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <div className="p-6 pt-20">
-          <div className="mb-8">
-            <div className="flex items-center text-2xl font-bold mb-6">
-              <i className="fas fa-globe-americas mr-2"></i>
-              DreamExplore
-            </div>
-            <p className="text-blue-100 text-sm">
-              Your gateway to global opportunities
-            </p>
-          </div>
-
-          <nav className="space-y-4">
-            {[
-              { name: "Home", path: "/" },
-              { name: "Services", path: "/services" },
-              { name: "Jobs", path: "/jobs" },
-              { name: "Schools", path: "/schools" },
-              { name: "Scholarships", path: "/scholarships" },
-              { name: "Tourism", path: "/tourism" },
-            ].map((item) => (
-              <div
-                key={item.name}
-                onClick={() => handleMobileNavClick(item.path)}
-                className="text-lg font-medium py-3 px-4 rounded-xl hover:bg-white/10 transition-all duration-300 cursor-pointer flex items-center group"
-              >
-                <span className="group-hover:translate-x-2 transition-transform duration-300">
-                  {item.name}
-                </span>
-                <i className="fas fa-chevron-right ml-auto text-sm opacity-0 group-hover:opacity-100 transition-all duration-300"></i>
-              </div>
-            ))}
-          </nav>
-
-          <div className="absolute bottom-8 left-6 right-6 space-y-4">
-            {isAuthenticated ? (
-              <div
-                onClick={() => handleMobileNavClick("/dashboard")}
-                className="bg-white/10 hover:bg-white/20 py-4 px-6 rounded-xl font-semibold text-center transition-all duration-300 cursor-pointer"
-              >
-                Dashboard
-              </div>
-            ) : (
-              <div
-                onClick={() => handleMobileNavClick("/accounts/login")}
-                className="bg-white/10 hover:bg-white/20 py-4 px-6 rounded-xl font-semibold text-center transition-all duration-300 cursor-pointer"
-              >
-                Login
-              </div>
-            )}
-            <div
-              onClick={() => handleMobileNavClick("/book-interview")}
-              className="bg-gradient-to-r from-blue-500 to-blue-400 hover:from-blue-400 hover:to-blue-300 py-4 px-6 rounded-xl font-semibold text-center shadow-lg transition-all duration-300 cursor-pointer"
-            >
-              Book an Appointment
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <header className="fixed w-full top-0 z-40 bg-white bg-opacity-95 shadow-lg transition-all duration-300">
-        <div className="container mx-auto px-4">
-          <nav className="flex justify-between items-center py-5">
-            {/* Mobile Menu Button - Top Left */}
-            <div className="md:hidden">
-              <button
-                onClick={toggleMobileMenu}
-                className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 to-blue-500 shadow-lg shadow-blue-500/40 flex items-center justify-center text-white hover:shadow-blue-500/60 hover:scale-105 transition-all duration-300 relative z-50"
-                aria-label="Toggle menu"
-              >
-                <div className="relative w-6 h-6">
-                  <span
-                    className={`absolute top-1/2 left-1/2 w-4 h-0.5 bg-white transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
-                      isMobileMenuOpen ? "rotate-45" : "-translate-y-1.5"
-                    }`}
-                  />
-                  <span
-                    className={`absolute top-1/2 left-1/2 w-4 h-0.5 bg-white transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
-                      isMobileMenuOpen ? "opacity-0" : "opacity-100"
-                    }`}
-                  />
-                  <span
-                    className={`absolute top-1/2 left-1/2 w-4 h-0.5 bg-white transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
-                      isMobileMenuOpen ? "-rotate-45" : "translate-y-1.5"
-                    }`}
-                  />
-                </div>
-              </button>
-            </div>
-
-            {/* Logo - Centered on mobile, left on desktop */}
-            <div
-              className="flex items-center text-2xl font-bold text-blue-800 cursor-pointer md:ml-0 mx-auto md:mx-0"
-              onClick={() => router.push("/")}
-            >
-              <i className="fas fa-globe-americas mr-2 text-2xl"></i>
-              <span className="hidden sm:inline">DreamExplore</span>
-              <span className="sm:hidden">DE</span>
-            </div>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex space-x-8">
-              {[
-                "Home",
-                "Services",
-                "Jobs",
-                "Schools",
-                "Scholarships",
-                "Tourism",
-              ].map((item, i) => (
-                <div
-                  key={i}
-                  className="text-gray-800 font-medium hover:text-blue-800 transition-colors duration-300 relative after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-blue-800 after:transition-all after:duration-300 hover:after:w-full"
-                >
-                  {item}
-                </div>
-              ))}
-            </div>
-
-            {/* Desktop Auth Buttons */}
-            <div className="hidden md:flex items-center">
-              {isAuthenticated ? (
-                <div
-                  onClick={() => router.push("/dashboard")}
-                  className="text-gray-800 font-medium mr-5 hover:text-blue-800 transition-colors duration-300 cursor-pointer"
-                >
-                  Dashboard
-                </div>
-              ) : (
-                <div
-                  onClick={handleLogin}
-                  className="text-gray-800 font-medium mr-5 hover:text-blue-800 transition-colors duration-300 cursor-pointer"
-                >
-                  Login
-                </div>
-              )}
-              <div
-                onClick={handleBookAppointment}
-                className="bg-gradient-to-r from-blue-800 to-blue-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300 cursor-pointer"
-              >
-                Book an Appointment
-              </div>
-            </div>
-
-            {/* Placeholder for mobile to balance layout */}
-            <div className="w-12 md:hidden" />
-          </nav>
-        </div>
-      </header>
+      <Header />
 
       {/* Rest of the component remains exactly the same */}
       <section className="relative h-[70vh] mt-20 overflow-hidden">
@@ -777,11 +615,12 @@ function HeroPage() {
                 Featured Opportunities
               </div>
               <h2 className="text-4xl font-bold text-gray-800 mb-4">
-                Discover Your Next Adventure
+                Your Next Global Adventure Awaits
               </h2>
               <p className="text-xl text-gray-600 max-w-2xl">
-                Hand-picked global opportunities tailored to your skills and
-                aspirations
+                Explore a curated selection of international roles and
+                scholarships, each chosen to match your unique skills and
+                ambitions.
               </p>
             </div>
 
@@ -858,7 +697,7 @@ function HeroPage() {
             <div className="lg:col-span-1">
               <div className="flex items-center text-2xl font-bold mb-6">
                 <i className="fas fa-globe-americas mr-2"></i>
-                DreamExplore
+                Dream Abroad
               </div>
               <p className="text-blue-100 mb-6 leading-relaxed">
                 Connecting talented individuals with global opportunities. Your
@@ -972,7 +811,7 @@ function HeroPage() {
           {/* Bottom Bar */}
           <div className="border-t border-blue-400 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
             <div className="text-blue-100 text-sm mb-4 md:mb-0">
-              © 2024 DreamExplore. All rights reserved.
+              © 2024 Dream Abroad. All rights reserved.
             </div>
             <div className="flex space-x-6 text-sm">
               <a

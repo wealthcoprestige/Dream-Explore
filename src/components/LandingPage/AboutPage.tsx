@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import Image from "next/image";
+import Header from "./Header";
 
 function AboutPage() {
   const services = [
@@ -143,6 +144,7 @@ function AboutPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Header />
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-blue-800 to-blue-600 text-white py-16 sm:py-24">
         <div className="container mx-auto px-4 text-center">
@@ -328,7 +330,7 @@ function AboutPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-6">
-                Why DreamExplore Stands Out
+                Why Dream Abroad Stands Out
               </h2>
 
               <div className="space-y-6">
@@ -442,7 +444,7 @@ function AboutPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
             <div>
               <h3 className="text-xl font-bold mb-6 relative pb-2 after:absolute after:bottom-0 after:left-0 after:w-10 after:h-0.5 after:bg-white">
-                DreamExplore
+                Dream Abroad
               </h3>
               <p className="text-white/80 leading-relaxed">
                 Your trusted partner for global immigration, education, and
@@ -573,7 +575,7 @@ function AboutPage() {
 
           <div className="pt-8 border-t border-white/20 text-center text-white/80">
             <p>
-              &copy; 2024 DreamExplore Immigration Services. All rights
+              &copy; 2024 Dream Abroad Immigration Services. All rights
               reserved. Trusted by thousands for visa success since 2003.
             </p>
           </div>

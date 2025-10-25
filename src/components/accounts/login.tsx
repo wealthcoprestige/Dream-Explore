@@ -19,13 +19,9 @@ interface LoginRequest {
 
 function LoginPage() {
   const router = useRouter();
-  const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    confirmPassword: "",
-    firstName: "",
-    lastName: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -67,22 +63,6 @@ function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!isLogin) {
-      // Handle sign up logic here
-      if (formData.password !== formData.confirmPassword) {
-        setError("Passwords do not match");
-        return;
-      }
-      if (!formData.firstName || !formData.lastName) {
-        setError("Please fill in all fields");
-        return;
-      }
-      console.log("Sign up form submitted:", formData);
-      // Add your sign up API call here
-      return;
-    }
-
     // Login validation
     if (!formData.email || !formData.password) {
       setError("Please fill in all fields");
@@ -107,76 +87,20 @@ function LoginPage() {
         <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-6 text-center">
           <div className="flex items-center justify-center mb-4">
             <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center mr-2">
-              <i className="fas fa-globe text-white text-lg"></i>
+              <i className="fas fa-globe-americas text-white text-lg"></i>
             </div>
-            <h1 className="text-xl font-bold">DreamExplore</h1>
+            <h1 className="text-xl font-bold">Dream Abroad</h1>
           </div>
-          <h2 className="text-2xl font-bold mb-2">
-            {isLogin ? "Welcome Back" : "Create Account"}
-          </h2>
-          <p className="text-blue-100 text-sm">
-            {isLogin
-              ? "Sign in to your account"
-              : "Start your global journey today"}
-          </p>
+          <h2 className="text-2xl font-bold mb-2">Welcome Back</h2>
+          <p className="text-blue-100 text-sm">Sign in to your account</p>
         </div>
         <div className="p-6">
-          <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
-            <button
-              onClick={() => setIsLogin(true)}
-              className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-all duration-300 ${
-                isLogin
-                  ? "bg-white text-blue-700 shadow-md"
-                  : "text-gray-600 hover:text-gray-800"
-              }`}
-            >
-              Sign In
-            </button>
-            <button
-              onClick={() => setIsLogin(false)}
-              className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-all duration-300 ${
-                !isLogin
-                  ? "bg-white text-blue-700 shadow-md"
-                  : "text-gray-600 hover:text-gray-800"
-              }`}
-            >
-              Sign Up
-            </button>
-          </div>
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-600 text-sm text-center">{error}</p>
             </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    placeholder="First Name"
-                    required={!isLogin}
-                    disabled={isLoading}
-                  />
-                </div>
-                <div>
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    placeholder="Last Name"
-                    required={!isLogin}
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-            )}
             <div>
               <input
                 type="email"
@@ -202,43 +126,26 @@ function LoginPage() {
                 minLength={6}
               />
             </div>
-            {!isLogin && (
-              <div>
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center">
                 <input
-                  type="password"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  placeholder="Confirm Password"
-                  required={!isLogin}
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  className="h-3 w-3 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   disabled={isLoading}
-                  minLength={6}
                 />
+                <label htmlFor="remember-me" className="ml-2 text-gray-700">
+                  Remember me
+                </label>
               </div>
-            )}
-            {isLogin && (
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center">
-                  <input
-                    id="remember-me"
-                    name="remember-me"
-                    type="checkbox"
-                    className="h-3 w-3 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    disabled={isLoading}
-                  />
-                  <label htmlFor="remember-me" className="ml-2 text-gray-700">
-                    Remember me
-                  </label>
-                </div>
-                <a
-                  href="#"
-                  className="text-blue-600 hover:text-blue-500 font-medium"
-                >
-                  Forgot password?
-                </a>
-              </div>
-            )}
+              <a
+                href="#"
+                className="text-blue-600 hover:text-blue-500 font-medium"
+              >
+                Forgot password?
+              </a>
+            </div>
             <button
               type="submit"
               disabled={isLoading}
@@ -251,12 +158,10 @@ function LoginPage() {
               {isLoading ? (
                 <div className="flex items-center justify-center">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  {isLogin ? "Signing In..." : "Creating Account..."}
+                  Signing In...
                 </div>
-              ) : isLogin ? (
-                "Sign In"
               ) : (
-                "Create Account"
+                "Sign In"
               )}
             </button>
             <div className="relative my-4">
@@ -287,49 +192,7 @@ function LoginPage() {
                 LinkedIn
               </button>
             </div>
-            {!isLogin && (
-              <p className="text-center text-xs text-gray-600 mt-4">
-                By creating an account, you agree to our{" "}
-                <a
-                  href="#"
-                  className="text-blue-600 hover:text-blue-500 font-medium"
-                >
-                  Terms
-                </a>{" "}
-                and{" "}
-                <a
-                  href="#"
-                  className="text-blue-600 hover:text-blue-500 font-medium"
-                >
-                  Privacy Policy
-                </a>
-              </p>
-            )}
           </form>
-          <div className="text-center mt-6">
-            <p className="text-gray-600 text-sm">
-              {isLogin
-                ? "Don't have an account? "
-                : "Already have an account? "}
-              <button
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setError("");
-                  setFormData({
-                    email: "",
-                    password: "",
-                    confirmPassword: "",
-                    firstName: "",
-                    lastName: "",
-                  });
-                }}
-                disabled={isLoading}
-                className="font-medium text-blue-600 hover:text-blue-500 disabled:opacity-50"
-              >
-                {isLogin ? "Sign up" : "Sign in"}
-              </button>
-            </p>
-          </div>
         </div>
       </div>
     </div>

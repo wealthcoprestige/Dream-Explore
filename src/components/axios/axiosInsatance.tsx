@@ -41,7 +41,7 @@ class ApiService {
             // Remove the invalid token
             localStorage.removeItem("access_token");
             // Redirect to the login page
-            window.location.href = "/login";
+            window.location.href = "/accounts/login";
           }
         }
         return Promise.reject(error);

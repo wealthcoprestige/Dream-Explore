@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import Header from "../Header";
+import { useRouter } from "next/navigation";
+import Header from "./Header";
 
 function ContactPage() {
   const router = useRouter();
@@ -547,7 +547,7 @@ function ContactPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
             <div>
               <h3 className="text-xl font-bold mb-6 relative pb-2 after:absolute after:bottom-0 after:left-0 after:w-10 after:h-0.5 after:bg-white">
-                DreamAboardOpportunities
+                Dream Abroad
               </h3>
               <p className="text-white/80 leading-relaxed">
                 Your trusted partner for global immigration, education, and
@@ -650,9 +650,9 @@ function ContactPage() {
 
           <div className="pt-8 border-t border-white/20 text-center text-white/80">
             <p>
-              &copy; 2024 DreamAboardOpportunities Immigration Services. All
-              rights reserved. Trusted by thousands for international success
-              since 2003.
+              &copy; 2024 Dream Abroad Immigration Services. All rights
+              reserved. Trusted by thousands for international success since
+              2003.
             </p>
           </div>
         </div>

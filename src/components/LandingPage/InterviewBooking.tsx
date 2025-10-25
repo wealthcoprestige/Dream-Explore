@@ -20,6 +20,7 @@ interface Applicant {
 }
 
 function InterviewBooking() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("schedule");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
@@ -30,7 +31,7 @@ function InterviewBooking() {
   const [pastInterviews, setPastInterviews] = useState<any[]>([]);
   const [availableSlots, setAvailableSlots] = useState<Slot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
-  const [interviewDescription, setInterviewDescription] = useState("");
+  const [interviewDescription, setInterviewDescription] = useState<string>("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [applicant, setApplicant] = useState<Applicant | null>(null);
@@ -48,7 +49,6 @@ function InterviewBooking() {
       if (token) {
         setIsAuthenticated(true);
         try {
-          // Assuming the dashboard endpoint returns the applicant data
           const response = await api.get<{ applicant: Applicant }>(
             "dashboard/applicant/"
           );
@@ -175,19 +175,53 @@ function InterviewBooking() {
               className="flex items-center text-xl font-bold text-blue-800"
             >
               <i className="fas fa-globe-americas mr-2"></i>
-              <span className="hidden sm:inline">DreamExplore</span>
-              <span className="sm:hidden">DE</span>
+              <span className="hidden sm:inline">Dream Abroad</span>
+              <span className="sm:hidden">DA</span>
             </button>
 
-            {/* Desktop Button */}
-            <button className="hidden sm:block bg-gradient-to-r from-blue-800 to-blue-600 text-white px-4 py-2 rounded-full font-semibold shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-sm">
-              Back to Dashboard
-            </button>
+            <div className="hidden md:flex items-center space-x-8">
+              {[
+                { name: "Home", path: "/" },
+                { name: "About", path: "/about" },
+                { name: "Services", path: "/services" },
+                { name: "Contact", path: "/contact" },
+              ].map((item) => (
+                <div
+                  key={item.name}
+                  onClick={() => router.push(item.path)}
+                  className="text-gray-800 font-medium hover:text-blue-800 transition-colors duration-300 cursor-pointer"
+                >
+                  {item.name}
+                </div>
+              ))}
+            </div>
 
-            {/* Mobile Button */}
-            <button className="sm:hidden bg-blue-600 text-white px-3 py-2 rounded-full font-semibold text-sm">
-              <i className="fas fa-arrow-left"></i>
-            </button>
+            {/* Desktop Buttons */}
+            <div className="hidden md:flex items-center space-x-4">
+              {isAuthenticated ? (
+                <button
+                  onClick={() => router.push("/dashboard")}
+                  className="bg-gradient-to-r from-blue-800 to-blue-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                >
+                  Back to Dashboard
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => router.push("/")}
+                    className="text-gray-800 font-medium hover:text-blue-800 transition-colors duration-300"
+                  >
+                    Find Opportunities
+                  </button>
+                  <button
+                    onClick={() => router.push("/accounts/login")}
+                    className="bg-gradient-to-r from-blue-800 to-blue-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                  >
+                    Login
+                  </button>
+                </>
+              )}
+            </div>
           </nav>
         </div>
       </header>

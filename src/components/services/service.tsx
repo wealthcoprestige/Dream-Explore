@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Header from "../LandingPage/Header";
 
 function ServicesPage() {
   const router = useRouter();
@@ -274,45 +275,7 @@ function ServicesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-40">
-        <div className="container mx-auto px-4">
-          <nav className="flex justify-between items-center py-4">
-            <button
-              onClick={() => router.push("/")}
-              className="flex items-center text-xl font-bold text-blue-800"
-            >
-              <i className="fas fa-globe-americas mr-2"></i>
-              <span className="hidden sm:inline">DreamAboardOpportunities</span>
-              <span className="sm:hidden">DA</span>
-            </button>
-
-            <div className="hidden md:flex items-center space-x-8">
-              {[
-                { name: "Home", path: "/" },
-                { name: "About Us", path: "/about" },
-                { name: "Services", path: "/services" },
-                { name: "Contact", path: "/contact" },
-              ].map((item) => (
-                <div
-                  key={item.name}
-                  onClick={() => router.push(item.path)}
-                  className="text-gray-800 font-medium hover:text-blue-800 transition-colors duration-300 cursor-pointer"
-                >
-                  {item.name}
-                </div>
-              ))}
-            </div>
-
-            <button
-              onClick={() => router.push("/book-interview")}
-              className="bg-gradient-to-r from-blue-800 to-blue-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-            >
-              Book Consultation
-            </button>
-          </nav>
-        </div>
-      </header>
+      <Header />
 
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-blue-800 to-blue-600 text-white py-16 sm:py-24">
@@ -576,7 +539,7 @@ function ServicesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
             <div>
               <h3 className="text-xl font-bold mb-6 relative pb-2 after:absolute after:bottom-0 after:left-0 after:w-10 after:h-0.5 after:bg-white">
-                DreamAboardOpportunities
+                Dream Abroad
               </h3>
               <p className="text-white/80 leading-relaxed">
                 Your trusted partner for global immigration, education, and
@@ -708,9 +671,9 @@ function ServicesPage() {
 
           <div className="pt-8 border-t border-white/20 text-center text-white/80">
             <p>
-              &copy; 2024 DreamAboardOpportunities Immigration Services. All
-              rights reserved. Trusted by thousands for international success
-              since 2003.
+              &copy; 2024 Dream Abroad Immigration Services. All rights
+              reserved. Trusted by thousands for international success since
+              2003.
             </p>
           </div>
         </div>

@@ -100,6 +100,7 @@ function OpportunityDetailPage() {
   const [submitError, setSubmitError] = useState<string>("");
   const [unauthenticatedSuccess, setUnauthenticatedSuccess] =
     useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   // Form data matching the Django Applicant and Application models
   const [formData, setFormData] = useState<FormData>({
@@ -157,6 +158,13 @@ function OpportunityDetailPage() {
     };
 
     fetchData();
+
+    // Check for authentication token
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("access_token")
+        : null;
+    setIsAuthenticated(!!token);
   }, [campaignId]);
 
   // Helper function to get full image URL
@@ -312,6 +320,39 @@ function OpportunityDetailPage() {
     }
 
     return true;
+  };
+
+  const handleAuthenticatedApply = async () => {
+    if (!campaignId) {
+      setSubmitError("No campaign selected");
+      return;
+    }
+
+    setSubmitting(true);
+    setSubmitError("");
+
+    try {
+      const response: AxiosResponse = await api.post(
+        `applicant/application/auth/${campaignId}`
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        setSubmitSuccess(true);
+        setTimeout(() => router.push("/dashboard"), 2000);
+      }
+    } catch (error) {
+      console.error("Error submitting application:", error);
+      if (error instanceof AxiosError && error.response) {
+        const errorData = error.response.data;
+        setSubmitError(
+          errorData.message || "Failed to submit application. Please try again."
+        );
+      } else {
+        setSubmitError("An unexpected error occurred. Please try again.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleSubmitApplication = async (e: FormEvent) => {
@@ -516,8 +557,8 @@ function OpportunityDetailPage() {
               href="#"
               className="flex items-center text-2xl font-bold text-blue-800"
             >
-              <i className="fas fa-globe-americas mr-2 text-2xl"></i>
-              DreamExplore
+              <i className="fas fa-globe-americas mr-2 text-2xl"></i> Dream
+              Abroad
             </a>
             <div className="flex items-center space-x-4">
               <button
@@ -690,10 +731,22 @@ function OpportunityDetailPage() {
                 </div>
 
                 <button
-                  onClick={() => setShowApplicationForm(true)}
-                  className="w-full bg-gradient-to-r from-blue-800 to-blue-600 text-white py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                  onClick={
+                    isAuthenticated
+                      ? handleAuthenticatedApply
+                      : () => setShowApplicationForm(true)
+                  }
+                  disabled={submitting}
+                  className="w-full bg-gradient-to-r from-blue-800 to-blue-600 text-white py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Apply Now
+                  {submitting ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-2"></div>
+                      Applying...
+                    </div>
+                  ) : (
+                    "Apply Now"
+                  )}
                 </button>
 
                 <button className="w-full border-2 border-blue-600 text-blue-600 py-4 rounded-xl font-semibold mt-3 hover:bg-blue-50 transition-all duration-300">
