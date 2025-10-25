@@ -36,7 +36,13 @@ class ApiService {
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
-          console.warn("Unauthorized request. Redirect to login if needed.");
+          if (typeof window !== "undefined") {
+            console.warn("Unauthorized request. Redirecting to login.");
+            // Remove the invalid token
+            localStorage.removeItem("access_token");
+            // Redirect to the login page
+            window.location.href = "/login";
+          }
         }
         return Promise.reject(error);
       }

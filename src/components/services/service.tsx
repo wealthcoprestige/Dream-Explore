@@ -15,9 +15,24 @@ function ServicesPage() {
 
   const serviceCategories = [
     { id: "all", name: "All Services", icon: "fas fa-star", count: 12 },
-    { id: "immigration", name: "Immigration", icon: "fas fa-passport", count: 4 },
-    { id: "employment", name: "Employment", icon: "fas fa-briefcase", count: 3 },
-    { id: "education", name: "Education", icon: "fas fa-graduation-cap", count: 3 },
+    {
+      id: "immigration",
+      name: "Immigration",
+      icon: "fas fa-passport",
+      count: 4,
+    },
+    {
+      id: "employment",
+      name: "Employment",
+      icon: "fas fa-briefcase",
+      count: 3,
+    },
+    {
+      id: "education",
+      name: "Education",
+      icon: "fas fa-graduation-cap",
+      count: 3,
+    },
     { id: "support", name: "Support", icon: "fas fa-hands-helping", count: 2 },
   ];
 
@@ -27,7 +42,8 @@ function ServicesPage() {
       category: "immigration",
       icon: "fas fa-plane-departure",
       title: "Visa Processing & Consultation",
-      description: "Complete visa application handling with expert guidance for higher approval rates",
+      description:
+        "Complete visa application handling with expert guidance for higher approval rates",
       price: "From $299",
       duration: "4-8 weeks",
       successRate: "98%",
@@ -36,17 +52,19 @@ function ServicesPage() {
         "Document preparation",
         "Application submission",
         "Interview coaching",
-        "Approval tracking"
+        "Approval tracking",
       ],
-      image: "https://images.unsplash.com/photo-1551836026-d5cbc2f0c53a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80",
-      popular: true
+      image:
+        "https://images.unsplash.com/photo-1551836026-d5cbc2f0c53a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80",
+      popular: true,
     },
     {
       id: 2,
       category: "employment",
       icon: "fas fa-briefcase",
       title: "Global Job Placement",
-      description: "International career opportunities with comprehensive relocation support",
+      description:
+        "International career opportunities with comprehensive relocation support",
       price: "From $499",
       duration: "2-6 months",
       successRate: "95%",
@@ -55,17 +73,19 @@ function ServicesPage() {
         "Resume optimization",
         "Interview preparation",
         "Relocation assistance",
-        "Post-placement support"
+        "Post-placement support",
       ],
-      image: "https://images.unsplash.com/photo-1521791136064-7986c2920216?ixlib=rb-4.0.3&auto=format&fit=crop&w=1469&q=80",
-      popular: false
+      image:
+        "https://images.unsplash.com/photo-1521791136064-7986c2920216?ixlib=rb-4.0.3&auto=format&fit=crop&w=1469&q=80",
+      popular: false,
     },
     {
       id: 3,
       category: "education",
       icon: "fas fa-graduation-cap",
       title: "University Admissions",
-      description: "Seamless university admissions and scholarship applications worldwide",
+      description:
+        "Seamless university admissions and scholarship applications worldwide",
       price: "From $399",
       duration: "3-6 months",
       successRate: "96%",
@@ -74,10 +94,11 @@ function ServicesPage() {
         "Application processing",
         "Scholarship assistance",
         "Student visa processing",
-        "Pre-departure briefing"
+        "Pre-departure briefing",
       ],
-      image: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80",
-      popular: true
+      image:
+        "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80",
+      popular: true,
     },
     {
       id: 4,
@@ -93,17 +114,19 @@ function ServicesPage() {
         "Document verification",
         "Relationship evidence preparation",
         "Interview preparation",
-        "Follow-up support"
+        "Follow-up support",
       ],
-      image: "https://images.unsplash.com/photo-1511895426328-dc8714191300?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80",
-      popular: false
+      image:
+        "https://images.unsplash.com/photo-1511895426328-dc8714191300?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80",
+      popular: false,
     },
     {
       id: 5,
       category: "support",
       icon: "fas fa-home",
       title: "Relocation Assistance",
-      description: "Complete relocation support including housing, banking, and settlement",
+      description:
+        "Complete relocation support including housing, banking, and settlement",
       price: "From $199",
       duration: "2-4 weeks",
       successRate: "99%",
@@ -112,17 +135,19 @@ function ServicesPage() {
         "Bank account setup",
         "Local registration",
         "Cultural orientation",
-        "Community integration"
+        "Community integration",
       ],
-      image: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1473&q=80",
-      popular: false
+      image:
+        "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1473&q=80",
+      popular: false,
     },
     {
       id: 6,
       category: "employment",
       icon: "fas fa-file-contract",
       title: "Work Permit Processing",
-      description: "Expert handling of work permits and employment authorization",
+      description:
+        "Expert handling of work permits and employment authorization",
       price: "From $349",
       duration: "4-10 weeks",
       successRate: "94%",
@@ -131,17 +156,19 @@ function ServicesPage() {
         "Employer documentation",
         "Application processing",
         "Renewal services",
-        "Compliance guidance"
+        "Compliance guidance",
       ],
-      image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1511&q=80",
-      popular: true
+      image:
+        "https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1511&q=80",
+      popular: true,
     },
     {
       id: 7,
       category: "education",
       icon: "fas fa-language",
       title: "Language Training & Testing",
-      description: "Comprehensive language preparation for immigration and education",
+      description:
+        "Comprehensive language preparation for immigration and education",
       price: "From $149",
       duration: "8-24 weeks",
       successRate: "92%",
@@ -150,17 +177,19 @@ function ServicesPage() {
         "Personalized training",
         "Test preparation",
         "Mock tests",
-        "Certificate guidance"
+        "Certificate guidance",
       ],
-      image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80",
-      popular: false
+      image:
+        "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80",
+      popular: false,
     },
     {
       id: 8,
       category: "immigration",
       icon: "fas fa-shield-alt",
       title: "Document Verification",
-      description: "Professional document authentication and verification services",
+      description:
+        "Professional document authentication and verification services",
       price: "From $99",
       duration: "1-3 weeks",
       successRate: "100%",
@@ -169,17 +198,19 @@ function ServicesPage() {
         "Authentication guidance",
         "Translation services",
         "Notarization assistance",
-        "Express processing"
+        "Express processing",
       ],
-      image: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80",
-      popular: false
+      image:
+        "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80",
+      popular: false,
     },
     {
       id: 9,
       category: "support",
       icon: "fas fa-hand-holding-usd",
       title: "Financial Planning",
-      description: "Immigration financial planning and proof of funds assistance",
+      description:
+        "Immigration financial planning and proof of funds assistance",
       price: "From $249",
       duration: "2-4 weeks",
       successRate: "98%",
@@ -188,22 +219,24 @@ function ServicesPage() {
         "Funds documentation",
         "Bank statement preparation",
         "Investment guidance",
-        "Tax planning"
+        "Tax planning",
       ],
-      image: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80",
-      popular: false
-    }
+      image:
+        "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80",
+      popular: false,
+    },
   ];
 
-  const filteredServices = activeCategory === "all" 
-    ? services 
-    : services.filter(service => service.category === activeCategory);
+  const filteredServices =
+    activeCategory === "all"
+      ? services
+      : services.filter((service) => service.category === activeCategory);
 
   const successStats = [
     { number: "10,000+", label: "Successful Clients" },
     { number: "50+", label: "Countries Served" },
     { number: "98%", label: "Success Rate" },
-    { number: "24/7", label: "Client Support" }
+    { number: "24/7", label: "Client Support" },
   ];
 
   const processSteps = [
@@ -211,32 +244,32 @@ function ServicesPage() {
       step: "01",
       title: "Consultation",
       description: "Free initial assessment of your needs and eligibility",
-      icon: "fas fa-comments"
+      icon: "fas fa-comments",
     },
     {
       step: "02",
       title: "Service Selection",
       description: "Choose the perfect service package for your goals",
-      icon: "fas fa-clipboard-list"
+      icon: "fas fa-clipboard-list",
     },
     {
       step: "03",
       title: "Documentation",
       description: "Expert guidance in preparing your application documents",
-      icon: "fas fa-file-alt"
+      icon: "fas fa-file-alt",
     },
     {
       step: "04",
       title: "Processing",
       description: "Professional handling of your application process",
-      icon: "fas fa-cogs"
+      icon: "fas fa-cogs",
     },
     {
       step: "05",
       title: "Success",
       description: "Achieve your immigration or career goals",
-      icon: "fas fa-trophy"
-    }
+      icon: "fas fa-trophy",
+    },
   ];
 
   return (
@@ -288,8 +321,8 @@ function ServicesPage() {
             Comprehensive Global Services
           </h1>
           <p className="text-xl sm:text-2xl text-blue-100 max-w-4xl mx-auto leading-relaxed">
-            End-to-end solutions for immigration, employment, and education abroad. 
-            Your complete partner for international success.
+            End-to-end solutions for immigration, employment, and education
+            abroad. Your complete partner for international success.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
             <button
@@ -299,7 +332,11 @@ function ServicesPage() {
               Explore Services
             </button>
             <button
-              onClick={() => document.getElementById('services').scrollIntoView({ behavior: 'smooth' })}
+              onClick={() =>
+                document
+                  .getElementById("services")
+                  .scrollIntoView({ behavior: "smooth" })
+              }
               className="border-2 border-white text-white px-8 py-4 rounded-xl font-bold hover:bg-white hover:text-blue-800 transition-all duration-300"
             >
               View All Services
@@ -352,8 +389,12 @@ function ServicesPage() {
                 <div className="text-2xl mb-2">
                   <i className={category.icon}></i>
                 </div>
-                <div className="font-semibold text-sm mb-1">{category.name}</div>
-                <div className="text-xs opacity-70">{category.count} services</div>
+                <div className="font-semibold text-sm mb-1">
+                  {category.name}
+                </div>
+                <div className="text-xs opacity-70">
+                  {category.count} services
+                </div>
               </button>
             ))}
           </div>
@@ -402,10 +443,14 @@ function ServicesPage() {
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center">
-                      <i className={`${service.icon} text-blue-600 text-xl`}></i>
+                      <i
+                        className={`${service.icon} text-blue-600 text-xl`}
+                      ></i>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-blue-600">{service.price}</div>
+                      <div className="text-2xl font-bold text-blue-600">
+                        {service.price}
+                      </div>
                       <div className="text-sm text-gray-500">Starting from</div>
                     </div>
                   </div>
@@ -419,7 +464,10 @@ function ServicesPage() {
 
                   <div className="space-y-2 mb-6">
                     {service.features.map((feature, index) => (
-                      <div key={index} className="flex items-center text-sm text-gray-600">
+                      <div
+                        key={index}
+                        className="flex items-center text-sm text-gray-600"
+                      >
                         <i className="fas fa-check text-green-500 mr-3"></i>
                         {feature}
                       </div>
@@ -434,7 +482,9 @@ function ServicesPage() {
                       Get Started
                     </button>
                     <button
-                      onClick={() => router.push(`/service-details?id=${service.id}`)}
+                      onClick={() =>
+                        router.push(`/service-details?id=${service.id}`)
+                      }
                       className="px-4 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors duration-300"
                     >
                       <i className="fas fa-info"></i>
@@ -455,7 +505,8 @@ function ServicesPage() {
               Our Simple 5-Step Process
             </h2>
             <p className="text-blue-100 text-lg max-w-2xl mx-auto">
-              A structured approach that ensures your success from start to finish
+              A structured approach that ensures your success from start to
+              finish
             </p>
           </div>
 
@@ -492,7 +543,8 @@ function ServicesPage() {
             Ready to Start Your Journey?
           </h2>
           <p className="text-green-100 text-xl mb-8 max-w-2xl mx-auto">
-            Let our experts guide you to international success. Choose your service and begin today.
+            Let our experts guide you to international success. Choose your
+            service and begin today.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
@@ -502,7 +554,11 @@ function ServicesPage() {
               Book Free Consultation
             </button>
             <button
-              onClick={() => document.getElementById('services').scrollIntoView({ behavior: 'smooth' })}
+              onClick={() =>
+                document
+                  .getElementById("services")
+                  .scrollIntoView({ behavior: "smooth" })
+              }
               className="border-2 border-white text-white px-8 py-4 rounded-xl font-bold hover:bg-white hover:text-green-800 transition-all duration-300"
             >
               View Services Again
@@ -523,8 +579,9 @@ function ServicesPage() {
                 DreamAboardOpportunities
               </h3>
               <p className="text-white/80 leading-relaxed">
-                Your trusted partner for global immigration, education, and career opportunities. 
-                20+ years of expertise in international success.
+                Your trusted partner for global immigration, education, and
+                career opportunities. 20+ years of expertise in international
+                success.
               </p>
             </div>
 
@@ -534,22 +591,34 @@ function ServicesPage() {
               </h3>
               <ul className="space-y-3">
                 <li>
-                  <a href="#" className="text-white/80 hover:text-white transition-colors duration-300">
+                  <a
+                    href="#"
+                    className="text-white/80 hover:text-white transition-colors duration-300"
+                  >
                     Visa Processing
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-white/80 hover:text-white transition-colors duration-300">
+                  <a
+                    href="#"
+                    className="text-white/80 hover:text-white transition-colors duration-300"
+                  >
                     Job Placement
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-white/80 hover:text-white transition-colors duration-300">
+                  <a
+                    href="#"
+                    className="text-white/80 hover:text-white transition-colors duration-300"
+                  >
                     University Admissions
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-white/80 hover:text-white transition-colors duration-300">
+                  <a
+                    href="#"
+                    className="text-white/80 hover:text-white transition-colors duration-300"
+                  >
                     Relocation Support
                   </a>
                 </li>
@@ -562,22 +631,34 @@ function ServicesPage() {
               </h3>
               <ul className="space-y-3">
                 <li>
-                  <a href="#" className="text-white/80 hover:text-white transition-colors duration-300">
+                  <a
+                    href="#"
+                    className="text-white/80 hover:text-white transition-colors duration-300"
+                  >
                     Home
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-white/80 hover:text-white transition-colors duration-300">
+                  <a
+                    href="#"
+                    className="text-white/80 hover:text-white transition-colors duration-300"
+                  >
                     About Us
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-white/80 hover:text-white transition-colors duration-300">
+                  <a
+                    href="#"
+                    className="text-white/80 hover:text-white transition-colors duration-300"
+                  >
                     Services
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-white/80 hover:text-white transition-colors duration-300">
+                  <a
+                    href="#"
+                    className="text-white/80 hover:text-white transition-colors duration-300"
+                  >
                     Contact
                   </a>
                 </li>
@@ -603,13 +684,22 @@ function ServicesPage() {
                 </p>
               </div>
               <div className="flex space-x-4 mt-4">
-                <a href="#" className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white hover:text-sky-500 transition-all duration-300">
+                <a
+                  href="#"
+                  className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white hover:text-sky-500 transition-all duration-300"
+                >
                   <i className="fab fa-whatsapp"></i>
                 </a>
-                <a href="#" className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white hover:text-sky-500 transition-all duration-300">
+                <a
+                  href="#"
+                  className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white hover:text-sky-500 transition-all duration-300"
+                >
                   <i className="fab fa-linkedin-in"></i>
                 </a>
-                <a href="#" className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white hover:text-sky-500 transition-all duration-300">
+                <a
+                  href="#"
+                  className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white hover:text-sky-500 transition-all duration-300"
+                >
                   <i className="fab fa-facebook-f"></i>
                 </a>
               </div>
@@ -618,8 +708,9 @@ function ServicesPage() {
 
           <div className="pt-8 border-t border-white/20 text-center text-white/80">
             <p>
-              &copy; 2024 DreamAboardOpportunities Immigration Services. All rights reserved. 
-              Trusted by thousands for international success since 2003.
+              &copy; 2024 DreamAboardOpportunities Immigration Services. All
+              rights reserved. Trusted by thousands for international success
+              since 2003.
             </p>
           </div>
         </div>
