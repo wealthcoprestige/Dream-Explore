@@ -1,11 +1,10 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "./Header";
 
 function ContactPage() {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeForm, setActiveForm] = useState("general");
   const [formData, setFormData] = useState({
     name: "",
@@ -16,19 +15,18 @@ function ContactPage() {
     message: "",
   });
 
-  useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    setIsAuthenticated(!!token);
-  }, []);
-
-  const handleInputChange = (e) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // Handle form submission here
     console.log("Form submitted:", formData);
@@ -47,8 +45,8 @@ function ContactPage() {
     {
       id: 1,
       country: "United Kingdom",
-      city: "Bishop's Stortford",
-      address: "12 Potter Street, Bishop's Stortford, Hertfordshire CM23 3UT",
+      city: "Bishop&apos;s Stortford",
+      address: "12 Potter Street, Bishop&apos;s Stortford, Hertfordshire CM23 3UT",
       phone: "+44 (0) 1279 654 321",
       email: "uk@dreamabroadopportunities.com",
       hours: "Mon-Fri: 9:00 AM - 6:00 PM",
@@ -179,7 +177,7 @@ function ContactPage() {
               onClick={() =>
                 document
                   .getElementById("contact-form")
-                  .scrollIntoView({ behavior: "smooth" })
+                  ?.scrollIntoView({ behavior: "smooth" })
               }
               className="bg-white text-blue-800 px-8 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
             >
@@ -189,7 +187,7 @@ function ContactPage() {
               onClick={() =>
                 document
                   .getElementById("locations")
-                  .scrollIntoView({ behavior: "smooth" })
+                  ?.scrollIntoView({ behavior: "smooth" })
               }
               className="border-2 border-white text-white px-8 py-4 rounded-xl font-bold hover:bg-white hover:text-blue-800 transition-all duration-300"
             >
@@ -345,8 +343,8 @@ function ContactPage() {
                 Send Us a Message
               </h2>
               <p className="text-gray-600 text-lg mb-8">
-                Tell us about your immigration goals and we'll match you with
-                the perfect expert
+                Tell us about your immigration goals and we&apos;ll match you
+                with the perfect expert
               </p>
 
               <div className="grid grid-cols-2 gap-4 mb-8">
@@ -488,7 +486,7 @@ function ContactPage() {
                     value={formData.message}
                     onChange={handleInputChange}
                     required
-                    rows="5"
+                    rows={5}
                     className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     placeholder="Tell us about your immigration goals, timeline, and any specific questions..."
                   ></textarea>
@@ -561,7 +559,7 @@ function ContactPage() {
                 Our Offices
               </h3>
               <ul className="space-y-3 text-white/80">
-                <li>Bishop's Stortford, UK</li>
+                <li>Bishop&apos;s Stortford, UK</li>
                 <li>Stratford, Canada</li>
                 <li>Bend, USA</li>
               </ul>

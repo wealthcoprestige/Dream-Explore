@@ -3,6 +3,7 @@ import React, { useEffect, useState, ChangeEvent, FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AxiosError, AxiosResponse } from "axios";
 import Image from "next/image";
+import Header from "./Header";
 import api from "../axios/axiosInsatance";
 
 // Define TypeScript interfaces
@@ -171,7 +172,7 @@ function OpportunityDetailPage() {
   const getImageUrl = (imagePath: string | undefined): string => {
     if (!imagePath) return "";
     if (imagePath.startsWith("http")) return imagePath;
-    return `http://127.0.0.1:8000${imagePath}`;
+    return `https://backend.dreamabroad.online${imagePath}`;
   };
 
   // Use actual data if available, otherwise use fallback
@@ -414,7 +415,7 @@ function OpportunityDetailPage() {
           }
         });
 
-        const response: AxiosResponse = await api.post(
+        const response = await api.post<{ success: boolean }>(
           `create/applicant/application/unauthenticated/${campaignId}`,
           unauthSubmitData,
           {
@@ -424,7 +425,7 @@ function OpportunityDetailPage() {
           }
         );
 
-        if (response.status === 200 && response.data.success) {
+        if (response.success) {
           setUnauthenticatedSuccess(true);
           setShowApplicationForm(false);
           resetForm();
@@ -550,28 +551,7 @@ function OpportunityDetailPage() {
       )}
 
       {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="container mx-auto px-4">
-          <nav className="flex justify-between items-center py-4">
-            <a
-              href="#"
-              className="flex items-center text-2xl font-bold text-blue-800"
-            >
-              <i className="fas fa-globe-americas mr-2 text-2xl"></i> Dream
-              Abroad
-            </a>
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => window.history.back()}
-                className="text-gray-600 hover:text-blue-800 transition-colors duration-300 flex items-center"
-              >
-                <i className="fas fa-arrow-left mr-2"></i>
-                Back to Opportunities
-              </button>
-            </div>
-          </nav>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">

@@ -1,18 +1,12 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Header from "../LandingPage/Header";
 
 function ServicesPage() {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeCategory, setActiveCategory] = useState("all");
-
-  useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    setIsAuthenticated(!!token);
-  }, []);
 
   const serviceCategories = [
     { id: "all", name: "All Services", icon: "fas fa-star", count: 12 },
@@ -298,7 +292,7 @@ function ServicesPage() {
               onClick={() =>
                 document
                   .getElementById("services")
-                  .scrollIntoView({ behavior: "smooth" })
+                  ?.scrollIntoView({ behavior: "smooth" })
               }
               className="border-2 border-white text-white px-8 py-4 rounded-xl font-bold hover:bg-white hover:text-blue-800 transition-all duration-300"
             >
@@ -520,7 +514,7 @@ function ServicesPage() {
               onClick={() =>
                 document
                   .getElementById("services")
-                  .scrollIntoView({ behavior: "smooth" })
+                  ?.scrollIntoView({ behavior: "smooth" })
               }
               className="border-2 border-white text-white px-8 py-4 rounded-xl font-bold hover:bg-white hover:text-green-800 transition-all duration-300"
             >

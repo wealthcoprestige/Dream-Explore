@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import api from "../axios/axiosInsatance";
+import api, { AxiosError } from "../axios/axiosInsatance";
 
 interface Slot {
   id: string;
@@ -19,16 +19,27 @@ interface Applicant {
   // Add other applicant fields if needed
 }
 
+interface Interview {
+  id: string;
+  jobTitle: string;
+  company: string;
+  type: "video" | "phone" | "in-person";
+  date: string;
+  time: string;
+  duration: number;
+  interviewer: string;
+  preparation?: string[];
+  meetingLink?: string;
+  feedback?: string;
+  rating?: number;
+}
+
 function InterviewBooking() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("schedule");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
-  const [selectedDuration, setSelectedDuration] = useState(30);
   const [interviewType, setInterviewType] = useState("video");
   const [bookingStep, setBookingStep] = useState(1);
-  const [upcomingInterviews, setUpcomingInterviews] = useState<any[]>([]);
-  const [pastInterviews, setPastInterviews] = useState<any[]>([]);
   const [availableSlots, setAvailableSlots] = useState<Slot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [interviewDescription, setInterviewDescription] = useState<string>("");
@@ -113,19 +124,27 @@ function InterviewBooking() {
     try {
       await api.post("/book-applicant-appointment/", requestBody);
       setBookingStep(4); // Move to confirmation step
-    } catch (err: any) {
-      console.error("Booking failed:", err);
-      setError(
-        err.response?.data?.detail || "An error occurred during booking."
-      );
+    } catch (err: unknown) {
+      if (err instanceof AxiosError) {
+        console.error("Booking failed:", err.response?.data);
+        setError(
+          err.response?.data?.detail || "An error occurred during booking."
+        );
+      } else {
+        console.error("Booking failed with an unexpected error:", err);
+        setError("An unexpected error occurred. Please try again.");
+      }
     }
   };
 
+  const upcomingInterviews: Interview[] = [];
+  const pastInterviews: Interview[] = [];
+  const selectedDuration = 30;
   const resetBooking = () => {
     window.location.reload();
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       weekday: "short",
       month: "short",
@@ -133,7 +152,7 @@ function InterviewBooking() {
     });
   };
 
-  const formatTime = (timeString) => {
+  const formatTime = (timeString: string) => {
     return new Date(`2000-01-01T${timeString}`).toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
@@ -141,15 +160,28 @@ function InterviewBooking() {
     });
   };
 
-  const isToday = (dateString) => {
+  const isToday = (dateString: string) => {
     const today = new Date().toDateString();
     return new Date(dateString).toDateString() === today;
   };
 
-  const isTomorrow = (dateString) => {
+  const isTomorrow = (dateString: string) => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     return new Date(dateString).toDateString() === tomorrow.toDateString();
+  };
+
+  const canJoinMeeting = (interview: Interview) => {
+    const interviewDateTime = new Date(`${interview.date}T${interview.time}`);
+    const now = new Date();
+
+    // Allow joining 5 minutes before the start time
+    const startTime = new Date(interviewDateTime.getTime() - 5 * 60 * 1000);
+    const endTime = new Date(
+      interviewDateTime.getTime() + interview.duration * 60 * 1000
+    );
+
+    return now >= startTime && now <= endTime;
   };
 
   // Mobile tab navigation
@@ -254,7 +286,7 @@ function InterviewBooking() {
                   <i className={`${tab.icon} text-sm mb-1 block`}></i>
                   <span className="text-xs font-medium">
                     {tab.label}
-                    {tab.count > 0 && (
+                    {tab.count && tab.count > 0 && (
                       <span className="ml-1 bg-blue-600 text-white rounded-full w-4 h-4 text-xs inline-flex items-center justify-center">
                         {tab.count}
                       </span>
@@ -279,7 +311,7 @@ function InterviewBooking() {
                   }`}
                 >
                   {tab.label}
-                  {tab.count > 0 && (
+                  {tab.count && tab.count > 0 && (
                     <span className="ml-2 bg-blue-600 text-white rounded-full px-2 py-1 text-xs">
                       {tab.count}
                     </span>
@@ -714,7 +746,7 @@ function InterviewBooking() {
                             <ul className="space-y-1 text-xs text-gray-600">
                               {interview.preparation
                                 .slice(0, 2)
-                                .map((item, index) => (
+                                .map((item: string, index: number) => (
                                   <li key={index} className="flex items-start">
                                     <i className="fas fa-check text-green-500 mt-1 mr-2 text-xs"></i>
                                     <span>{item}</span>
@@ -859,9 +891,11 @@ function InterviewBooking() {
                                     <i
                                       key={star}
                                       className={`fas fa-star ${
+                                        interview.rating &&
                                         star <= Math.floor(interview.rating)
                                           ? "text-yellow-400"
-                                          : star ===
+                                          : interview.rating &&
+                                            star ===
                                               Math.ceil(interview.rating) &&
                                             !Number.isInteger(interview.rating)
                                           ? "text-yellow-400"

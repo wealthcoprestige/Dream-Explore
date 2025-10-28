@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AxiosError } from "axios";
-import api, { authApi } from "../axios/axiosInsatance";
+import api from "../axios/axiosInsatance";
 
 interface User {
   id: string;
@@ -121,7 +121,7 @@ function ApplicantDashboard() {
     } else {
       fetchDashboardData();
     }
-  }, []);
+  }, [router]);
 
   const fetchDashboardData = async () => {
     try {
@@ -163,7 +163,7 @@ function ApplicantDashboard() {
     if (!imagePath)
       return "https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?semt=ais_hybrid&w=740&q=80"; // Fallback image
     if (imagePath.startsWith("http")) return imagePath;
-    return `http://127.0.0.1:8000${imagePath}`;
+    return `https://backend.dreamabroad.online${imagePath}`;
   };
   // Calculate statistics from the API data
   const calculateStatistics = () => {
@@ -202,21 +202,6 @@ function ApplicantDashboard() {
       scheduled: "bg-blue-100 text-blue-800",
     };
     return colors[status] || "bg-gray-100 text-gray-800";
-  };
-
-  const getStatusIcon = (status: string) => {
-    const icons: { [key: string]: string } = {
-      SUBMITTED: "fas fa-paper-plane",
-      UNDER_REVIEW: "fas fa-eye",
-      INTERVIEW: "fas fa-video",
-      ACCEPTED: "fas fa-trophy",
-      REJECTED: "fas fa-times-circle",
-      pending: "fas fa-clock",
-      overdue: "fas fa-exclamation-triangle",
-      completed: "fas fa-check-circle",
-      scheduled: "fas fa-calendar-check",
-    };
-    return icons[status] || "fas fa-clock";
   };
 
   const getStatusText = (status: string) => {
@@ -624,7 +609,7 @@ function ApplicantDashboard() {
                           />
                           <div>
                             <h4 className="font-semibold text-gray-800 text-sm sm:text-base">
-                              {application.campaign_details?.title ||
+                              {application.campaign.title ||
                                 `Application #${application.application_id}`}
                             </h4>
                             <p className="text-gray-600 text-xs sm:text-sm">
@@ -839,8 +824,8 @@ function ApplicantDashboard() {
                   ) : (
                     <div className="text-center py-10 bg-gray-50 rounded-xl">
                       <p className="text-gray-600">
-                        You've applied to all available opportunities. Check
-                        back later!
+                        You&apos;ve applied to all available opportunities.
+                        Check back later!
                       </p>
                     </div>
                   )}
@@ -1248,7 +1233,7 @@ function ApplicantDashboard() {
                         Campaign ID
                       </label>
                       <p className="text-gray-600">
-                        {selectedApplication.campaign}
+                        {selectedApplication.campaign.id}
                       </p>
                     </div>
                     <div>

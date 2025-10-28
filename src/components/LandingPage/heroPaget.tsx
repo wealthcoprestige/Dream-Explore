@@ -26,6 +26,24 @@ interface Category {
   name: string;
 }
 
+interface MappedCampaign {
+  id: number;
+  title: string;
+  description: string;
+  type: string;
+  location: string;
+  duration: string;
+  image: string;
+  salary: string;
+  deadline: string;
+  employment_type: string;
+  experience_level: string;
+  country: string;
+  city: string;
+  status: string;
+  days_remaining: number;
+}
+
 function HeroPage() {
   const [activeSlide, setActiveSlide] = useState(0);
   const [activeFilter, setActiveFilter] = useState("All");
@@ -37,8 +55,6 @@ function HeroPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
 
   const extractDataFromResponse = <T,>(response: unknown): T[] => {
@@ -85,20 +101,12 @@ function HeroPage() {
       }
     };
     fetchData();
-
-    // Check for authentication token
-    const token =
-      typeof window !== "undefined"
-        ? localStorage.getItem("access_token")
-        : null;
-    setIsAuthenticated(!!token);
   }, []);
 
-  // Helper function to get full image URL
   const getImageUrl = (imagePath: string | undefined): string => {
     if (!imagePath) return "";
     if (imagePath.startsWith("http")) return imagePath;
-    return `http://127.0.0.1:8000${imagePath}`;
+    return `https://backend.dreamabroad.online${imagePath}`;
   };
 
   const getCategoryName = (categoryId: number): string => {
@@ -141,16 +149,6 @@ function HeroPage() {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
-  const getExperienceLevelColor = (level: string): string => {
-    const colors: Record<string, string> = {
-      entry: "from-green-500 to-green-600",
-      mid: "from-blue-500 to-blue-600",
-      senior: "from-purple-500 to-purple-600",
-      student: "from-orange-500 to-orange-600",
-    };
-    return colors[level] || "from-gray-500 to-gray-600";
-  };
-
   const getEmploymentTypeIcon = (type: string): string => {
     const icons: Record<string, string> = {
       internship: "fas fa-graduation-cap",
@@ -163,25 +161,6 @@ function HeroPage() {
 
   const handleApplyNow = (campaignId: number) => {
     router.push(`/details?campaign_id=${campaignId}`);
-  };
-
-  const handleLogin = () => {
-    router.push("/accounts/login");
-  };
-
-  const handleBookAppointment = () => {
-    router.push("/book-interview");
-  };
-
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-
-  const handleMobileNavClick = (path?: string) => {
-    setIsMobileMenuOpen(false);
-    if (path) {
-      setTimeout(() => router.push(path), 300);
-    }
   };
 
   const mappedCampaigns = campaigns.map((campaign) => ({
@@ -202,7 +181,6 @@ function HeroPage() {
     days_remaining: getDaysRemaining(getDeadline(campaign.created_at)),
   }));
 
-  // SIMPLE FILTERING LOGIC - Exact matching
   const filteredOpportunities = mappedCampaigns.filter(
     (opp) => activeFilter === "All" || opp.type === activeFilter
   );
@@ -284,55 +262,32 @@ function HeroPage() {
     );
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-800 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading opportunities...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
-            Oops! Something went wrong
-          </h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-blue-800 text-white px-6 py-3 rounded-full font-semibold hover:bg-blue-700 transition-colors duration-300"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Campaign Card Component
-  const CampaignCard = ({ opportunity, isHealthcare = false }) => {
+  // Updated Campaign Card Component
+  const CampaignCard = ({
+    opportunity,
+    isHealthcare = false,
+  }: {
+    opportunity: MappedCampaign;
+    isHealthcare?: boolean;
+  }) => {
     const cardColors = isHealthcare
       ? {
           gradient: "from-green-500 to-green-600",
           text: "text-green-600",
           bg: "bg-green-50",
+          border: "border-green-100",
         }
       : {
           gradient: "from-blue-500 to-blue-600",
           text: "text-blue-600",
           bg: "bg-blue-50",
+          border: "border-blue-100",
         };
 
     return (
-      <div className="bg-white rounded-2xl shadow-xl overflow-hidden hover:-translate-y-2 hover:shadow-2xl transition-all duration-400 group border border-gray-100">
-        {/* Image Header with Overlay */}
-        <div className="relative h-48 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 group border border-gray-100">
+        {/* Image Container */}
+        <div className="relative h-56 overflow-hidden">
           <Image
             src={
               opportunity.image ||
@@ -340,49 +295,72 @@ function HeroPage() {
             }
             alt={opportunity.title}
             width={400}
-            height={192}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            height={224}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            priority
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
-          {/* Category Badge */}
-          <div
-            className={`absolute top-4 right-4 bg-gradient-to-r ${cardColors.gradient} text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg`}
-          >
-            {opportunity.type}
+          {/* Top Badges */}
+          <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
+            <div
+              className={`bg-white/90 backdrop-blur-sm ${cardColors.text} px-3 py-1.5 rounded-full text-xs font-semibold`}
+            >
+              <i
+                className={`fas ${getEmploymentTypeIcon(
+                  opportunity.employment_type
+                )} mr-1`}
+              ></i>
+              {opportunity.employment_type?.replace("_", " ").toUpperCase()}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <div
+                className={`bg-gradient-to-r ${cardColors.gradient} text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg`}
+              >
+                {opportunity.type}
+              </div>
+              {opportunity.days_remaining < 7 && (
+                <div className="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold animate-pulse">
+                  <i className="fas fa-clock mr-1"></i>
+                  {opportunity.days_remaining}d left
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Experience Level Badge */}
-          <div
-            className={`absolute top-4 left-4 bg-white/90 backdrop-blur-sm ${cardColors.text} px-3 py-1 rounded-full text-xs font-semibold`}
-          >
-            <i
-              className={`fas ${getEmploymentTypeIcon(
-                opportunity.employment_type
-              )} mr-1`}
-            ></i>
-            {opportunity.employment_type?.replace("_", " ").toUpperCase()}
-          </div>
-
-          {/* Days Remaining */}
-          <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded-full text-xs backdrop-blur-sm">
-            <i className="fas fa-clock mr-1"></i>
-            {opportunity.days_remaining > 0
-              ? `${opportunity.days_remaining} days left`
-              : "Closing soon"}
+          {/* Bottom Info */}
+          <div className="absolute bottom-4 left-4 right-4">
+            <div className="flex justify-between items-center text-white text-sm">
+              <div className="flex items-center bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                <i className="fas fa-map-marker-alt mr-1.5"></i>
+                <span className="truncate max-w-[120px]">
+                  {opportunity.location}
+                </span>
+              </div>
+              <div className="flex items-center bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                <i className="fas fa-dollar-sign mr-1.5"></i>
+                <span>
+                  {opportunity.salary?.split(" ")[0] || "Competitive"}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Card Content */}
         <div className="p-6">
-          {/* Title and Save Button */}
-          <div className="flex justify-between items-start mb-3">
-            <h3 className="text-xl font-bold text-gray-800 line-clamp-2 flex-1 mr-3">
+          {/* Title and Save */}
+          <div className="flex justify-between items-start mb-4">
+            <h3 className="text-xl font-bold text-gray-800 line-clamp-2 flex-1 mr-3 leading-tight">
               {opportunity.title}
             </h3>
-            <div
-              onClick={() => toggleSaveOpportunity(opportunity.id)}
-              className={`transition-all duration-300 cursor-pointer p-2 rounded-full ${
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleSaveOpportunity(opportunity.id);
+              }}
+              className={`flex-shrink-0 transition-all duration-300 p-2 rounded-full ${
                 savedOpportunities.has(opportunity.id)
                   ? `${cardColors.text} bg-${cardColors.bg.split("-")[1]}-50`
                   : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
@@ -393,7 +371,7 @@ function HeroPage() {
                   savedOpportunities.has(opportunity.id) ? "fas" : "far"
                 } fa-bookmark text-lg`}
               ></i>
-            </div>
+            </button>
           </div>
 
           {/* Description */}
@@ -404,37 +382,33 @@ function HeroPage() {
           {/* Info Grid */}
           <div className="grid grid-cols-2 gap-3 mb-4">
             <div className="flex items-center text-gray-600 text-sm">
-              <i className="fas fa-map-marker-alt mr-2 text-gray-400"></i>
-              <span className="truncate">{opportunity.location}</span>
-            </div>
-            <div className="flex items-center text-gray-600 text-sm">
               <i className="fas fa-clock mr-2 text-gray-400"></i>
               <span>{opportunity.duration}</span>
             </div>
             <div className="flex items-center text-gray-600 text-sm">
-              <i className="fas fa-dollar-sign mr-2 text-gray-400"></i>
-              <span>{opportunity.salary || "Competitive"}</span>
-            </div>
-            <div className="flex items-center text-gray-600 text-sm">
-              <i className={`fas fa-user-tie mr-2 text-gray-400`}></i>
+              <i className="fas fa-user-tie mr-2 text-gray-400"></i>
               <span className="capitalize">{opportunity.experience_level}</span>
             </div>
           </div>
 
           {/* Progress Bar for Urgency */}
-          {opportunity.days_remaining < 7 && (
+          {opportunity.days_remaining < 30 && (
             <div className="mb-4">
               <div className="flex justify-between text-xs text-gray-500 mb-1">
-                <span>Apply soon</span>
+                <span>Application closing</span>
                 <span>{opportunity.days_remaining} days left</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-1.5">
+              <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
-                  className={`bg-red-500 h-1.5 rounded-full transition-all duration-500`}
+                  className={`${
+                    opportunity.days_remaining < 7
+                      ? "bg-red-500"
+                      : "bg-yellow-500"
+                  } h-2 rounded-full transition-all duration-500`}
                   style={{
                     width: `${Math.max(
                       10,
-                      (opportunity.days_remaining / 7) * 100
+                      (opportunity.days_remaining / 30) * 100
                     )}%`,
                   }}
                 ></div>
@@ -446,14 +420,17 @@ function HeroPage() {
           <div className="flex justify-between items-center pt-4 border-t border-gray-100">
             <button
               onClick={() => handleApplyNow(opportunity.id)}
-              className={`bg-gradient-to-r ${cardColors.gradient} hover:shadow-lg transform hover:-translate-y-0.5 text-white px-6 py-2.5 rounded-full font-semibold transition-all duration-300 flex items-center group`}
+              className={`bg-gradient-to-r ${cardColors.gradient} hover:shadow-lg transform hover:-translate-y-0.5 text-white px-6 py-3 rounded-full font-semibold transition-all duration-300 flex items-center group`}
             >
               Apply Now
               <i className="fas fa-arrow-right ml-2 text-xs group-hover:translate-x-1 transition-transform duration-300"></i>
             </button>
-            <button className="text-gray-500 hover:text-gray-700 transition-colors duration-300 flex items-center text-sm">
-              <i className="far fa-eye mr-1"></i>
-              Details
+            <button
+              onClick={() => handleApplyNow(opportunity.id)}
+              className="text-gray-500 hover:text-gray-700 transition-colors duration-300 flex items-center text-sm font-medium"
+            >
+              <i className="far fa-eye mr-2"></i>
+              View Details
             </button>
           </div>
         </div>
@@ -461,12 +438,42 @@ function HeroPage() {
     );
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">Loading opportunities...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center max-w-md mx-auto">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            Oops! Something went wrong
+          </h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-blue-700 transition-colors duration-300"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gray-50">
       <Header />
 
-      {/* Rest of the component remains exactly the same */}
-      <section className="relative h-[70vh] mt-20 overflow-hidden">
+      <section className="relative h-[70vh] min-h-[600px] mt-16 overflow-hidden">
         <div className="relative h-full w-full">
           {slides.map((slide, index) => (
             <div
@@ -478,9 +485,10 @@ function HeroPage() {
                 backgroundImage: `url('${slide.bgImage}')`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
+                backgroundAttachment: "fixed",
               }}
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-900/80 to-blue-500/60"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-900/80 to-blue-600/60"></div>
               <div className="container mx-auto px-4 h-full flex items-center">
                 <div
                   className={`max-w-2xl text-white transform transition-all duration-1000 ${
@@ -489,32 +497,36 @@ function HeroPage() {
                       : "translate-y-8 opacity-0"
                   }`}
                 >
-                  <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
                     {slide.title}
                   </h1>
-                  <p className="text-xl mb-8 opacity-90">{slide.description}</p>
+                  <p className="text-xl md:text-2xl mb-8 opacity-90 leading-relaxed">
+                    {slide.description}
+                  </p>
                   <div className="flex flex-col sm:flex-row gap-4">
-                    <div className="bg-gradient-to-r from-blue-800 to-blue-500 text-white px-8 py-4 rounded-full font-semibold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300">
+                    <button className="bg-white text-blue-800 px-8 py-4 rounded-full font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 text-lg">
                       {slide.primaryBtn}
-                    </div>
-                    <div className="border-2 border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-blue-800 transition-all duration-300">
+                    </button>
+                    <button className="border-2 border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-blue-800 transition-all duration-300 text-lg">
                       {slide.secondaryBtn}
-                    </div>
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
           ))}
         </div>
+
+        {/* Slide Indicators */}
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3 z-10">
           {slides.map((_, index) => (
-            <div
+            <button
               key={index}
               onClick={() => setActiveSlide(index)}
               className={`w-3 h-3 rounded-full transition-all duration-300 cursor-pointer ${
                 index === activeSlide
                   ? "bg-white scale-125"
-                  : "bg-white bg-opacity-50"
+                  : "bg-white/50 hover:bg-white/80"
               }`}
             />
           ))}
@@ -523,17 +535,17 @@ function HeroPage() {
 
       {/* Healthcare Professionals Section */}
       {healthcareCampaigns.length > 0 && (
-        <section className="py-16 bg-gradient-to-r from-green-50 to-emerald-50">
+        <section className="py-16 bg-gradient-to-br from-green-50 to-emerald-100">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
-              <div className="inline-flex items-center bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm font-semibold mb-4">
-                <i className="fas fa-heartbeat mr-2"></i>
+              <div className="inline-flex items-center bg-green-100 text-green-800 px-6 py-3 rounded-full text-sm font-semibold mb-6 shadow-lg">
+                <i className="fas fa-heartbeat mr-3 text-lg"></i>
                 Healthcare Opportunities
               </div>
-              <h2 className="text-4xl font-bold text-gray-800 mb-4">
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-6">
                 Healthcare Professionals
               </h2>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
                 Discover rewarding healthcare opportunities around the world.
                 Join the global healthcare community and make a difference.
               </p>
@@ -552,7 +564,7 @@ function HeroPage() {
                   }).map((_, slideIndex) => (
                     <div
                       key={slideIndex}
-                      className="w-full flex-shrink-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                      className="w-full flex-shrink-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-2"
                     >
                       {healthcareCampaigns
                         .slice(slideIndex * 3, slideIndex * 3 + 3)
@@ -572,20 +584,20 @@ function HeroPage() {
                 <>
                   <button
                     onClick={prevHealthcareSlide}
-                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 z-10"
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 w-12 h-12 rounded-full shadow-xl flex items-center justify-center transition-all duration-300 z-10 hover:scale-110"
                   >
                     <i className="fas fa-chevron-left"></i>
                   </button>
                   <button
                     onClick={nextHealthcareSlide}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 z-10"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 w-12 h-12 rounded-full shadow-xl flex items-center justify-center transition-all duration-300 z-10 hover:scale-110"
                   >
                     <i className="fas fa-chevron-right"></i>
                   </button>
                 </>
               )}
 
-              <div className="flex justify-center mt-8 space-x-2">
+              <div className="flex justify-center mt-12 space-x-3">
                 {Array.from({
                   length: Math.ceil(healthcareCampaigns.length / 3),
                 }).map((_, index) => (
@@ -606,72 +618,71 @@ function HeroPage() {
       )}
 
       {/* Featured Opportunities Section */}
-      <section className="py-24 bg-gradient-to-br from-gray-50 to-blue-50">
+      <section className="py-20 bg-gradient-to-br from-gray-50 to-blue-50">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-12">
-            <div className="flex-1">
-              <div className="inline-flex items-center bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-semibold mb-4">
-                <i className="fas fa-star mr-2"></i>
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-16">
+            <div className="flex-1 mb-8 lg:mb-0">
+              <div className="inline-flex items-center bg-blue-100 text-blue-800 px-6 py-3 rounded-full text-sm font-semibold mb-6 shadow-lg">
+                <i className="fas fa-star mr-3 text-lg"></i>
                 Featured Opportunities
               </div>
-              <h2 className="text-4xl font-bold text-gray-800 mb-4">
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-6">
                 Your Next Global Adventure Awaits
               </h2>
-              <p className="text-xl text-gray-600 max-w-2xl">
+              <p className="text-xl text-gray-600 max-w-2xl leading-relaxed">
                 Explore a curated selection of international roles and
                 scholarships, each chosen to match your unique skills and
                 ambitions.
               </p>
             </div>
 
-            {/* Filter Tabs */}
-            <div className="flex flex-wrap gap-2 mt-6 lg:mt-0">
-              {[
-                "All",
-                "Healthcare",
-                "Education",
-                "Public Health",
-                "Scholarships",
-                "NGO Programs",
-                "Job",
-                "School",
-                "Scholarship",
-              ].map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => setActiveFilter(filter)}
-                  className={`px-5 py-2.5 rounded-full font-medium transition-all duration-300 cursor-pointer border ${
-                    activeFilter === filter
-                      ? "bg-blue-800 text-white border-blue-800 shadow-lg shadow-blue-500/25"
-                      : "bg-white text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-800"
-                  }`}
-                >
-                  {filter}
-                </button>
-              ))}
+            {/* Filter Tabs - Responsive */}
+            <div className="w-full lg:w-auto">
+              <div className="flex flex-wrap gap-3 justify-center lg:justify-end">
+                {[
+                  "All",
+                  "Healthcare",
+                  "Education",
+                  "Public Health",
+                  "Scholarships",
+                  "NGO Programs",
+                ].map((filter) => (
+                  <button
+                    key={filter}
+                    onClick={() => setActiveFilter(filter)}
+                    className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 cursor-pointer border-2 ${
+                      activeFilter === filter
+                        ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/25"
+                        : "bg-white text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700"
+                    } text-sm md:text-base`}
+                  >
+                    {filter}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
           {filteredOpportunities.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
               {filteredOpportunities.map((opportunity) => (
                 <CampaignCard key={opportunity.id} opportunity={opportunity} />
               ))}
             </div>
           ) : (
             <div className="text-center py-16">
-              <div className="bg-white rounded-2xl shadow-lg p-12 max-w-md mx-auto">
-                <div className="text-gray-400 text-6xl mb-4">🔍</div>
-                <h3 className="text-2xl font-bold text-gray-700 mb-3">
+              <div className="bg-white rounded-3xl shadow-xl p-12 max-w-md mx-auto">
+                <div className="text-gray-400 text-6xl mb-6">🔍</div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-4">
                   No opportunities found
                 </h3>
-                <p className="text-gray-500 mb-6">
+                <p className="text-gray-600 mb-8">
                   Try selecting a different filter or check back later for new
                   opportunities.
                 </p>
                 <button
                   onClick={() => setActiveFilter("All")}
-                  className="bg-blue-800 text-white px-6 py-3 rounded-full font-semibold hover:bg-blue-700 transition-colors duration-300"
+                  className="bg-blue-600 text-white px-8 py-4 rounded-full font-semibold hover:bg-blue-700 transition-colors duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
                 >
                   Show All Opportunities
                 </button>
@@ -681,37 +692,37 @@ function HeroPage() {
 
           {/* Load More Button */}
           <div className="text-center">
-            <button className="bg-gradient-to-r from-blue-800 to-blue-600 text-white px-8 py-4 rounded-full font-semibold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300 inline-flex items-center">
-              <i className="fas fa-sync-alt mr-2"></i>
+            <button className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-10 py-4 rounded-full font-semibold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300 inline-flex items-center text-lg">
+              <i className="fas fa-sync-alt mr-3"></i>
               Load More Opportunities
             </button>
           </div>
         </div>
       </section>
 
-      {/* Beautiful Footer */}
-      <footer className="bg-[#5686fe] text-white">
+      {/* Footer */}
+      <footer className="bg-gradient-to-br from-blue-600 to-blue-800 text-white">
         <div className="container mx-auto px-4 py-16">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
             {/* Company Info */}
             <div className="lg:col-span-1">
               <div className="flex items-center text-2xl font-bold mb-6">
-                <i className="fas fa-globe-americas mr-2"></i>
+                <i className="fas fa-globe-americas mr-3 text-blue-200"></i>
                 Dream Abroad
               </div>
-              <p className="text-blue-100 mb-6 leading-relaxed">
+              <p className="text-blue-100 mb-6 leading-relaxed text-lg">
                 Connecting talented individuals with global opportunities. Your
                 journey to international success starts here.
               </p>
               <div className="flex space-x-4">
                 {["facebook", "twitter", "linkedin", "instagram"].map(
                   (social) => (
-                    <div
+                    <button
                       key={social}
-                      className="bg-white/10 hover:bg-white/20 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer"
+                      className="bg-white/10 hover:bg-white/20 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
                     >
-                      <i className={`fab fa-${social}`}></i>
-                    </div>
+                      <i className={`fab fa-${social} text-lg`}></i>
+                    </button>
                   )
                 )}
               </div>
@@ -719,8 +730,8 @@ function HeroPage() {
 
             {/* Quick Links */}
             <div>
-              <h3 className="text-lg font-semibold mb-6">Quick Links</h3>
-              <ul className="space-y-3">
+              <h3 className="text-xl font-semibold mb-6">Quick Links</h3>
+              <ul className="space-y-4">
                 {[
                   "Home",
                   "About Us",
@@ -728,13 +739,11 @@ function HeroPage() {
                   "Jobs",
                   "Schools",
                   "Scholarships",
-                  "Tourism",
-                  "Contact",
                 ].map((link) => (
                   <li key={link}>
                     <a
                       href="#"
-                      className="text-blue-100 hover:text-white transition-colors duration-300"
+                      className="text-blue-100 hover:text-white transition-colors duration-300 text-lg hover:underline"
                     >
                       {link}
                     </a>
@@ -745,20 +754,19 @@ function HeroPage() {
 
             {/* Services */}
             <div>
-              <h3 className="text-lg font-semibold mb-6">Our Services</h3>
-              <ul className="space-y-3">
+              <h3 className="text-xl font-semibold mb-6">Our Services</h3>
+              <ul className="space-y-4">
                 {[
                   "Job Placement",
                   "Education Consulting",
                   "Scholarship Guidance",
                   "Visa Assistance",
                   "Career Counseling",
-                  "Travel Planning",
                 ].map((service) => (
                   <li key={service}>
                     <a
                       href="#"
-                      className="text-blue-100 hover:text-white transition-colors duration-300"
+                      className="text-blue-100 hover:text-white transition-colors duration-300 text-lg hover:underline"
                     >
                       {service}
                     </a>
@@ -769,66 +777,47 @@ function HeroPage() {
 
             {/* Contact Info */}
             <div>
-              <h3 className="text-lg font-semibold mb-6">Contact Us</h3>
-              <div className="space-y-4">
+              <h3 className="text-xl font-semibold mb-6">Contact Us</h3>
+              <div className="space-y-4 text-lg">
                 <div className="flex items-center">
-                  <i className="fas fa-map-marker-alt mr-3 text-blue-200"></i>
+                  <i className="fas fa-map-marker-alt mr-4 text-blue-200 text-xl"></i>
                   <span className="text-blue-100">
                     123 Global Street, City, Country
                   </span>
                 </div>
                 <div className="flex items-center">
-                  <i className="fas fa-phone mr-3 text-blue-200"></i>
+                  <i className="fas fa-phone mr-4 text-blue-200 text-xl"></i>
                   <span className="text-blue-100">+1 (555) 123-4567</span>
                 </div>
                 <div className="flex items-center">
-                  <i className="fas fa-envelope mr-3 text-blue-200"></i>
-                  <span className="text-blue-100">info@dreamexplore.com</span>
+                  <i className="fas fa-envelope mr-4 text-blue-200 text-xl"></i>
+                  <span className="text-blue-100">info@dreamabroad.com</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Trusted Partners */}
-          <div className="border-t border-blue-400 pt-12">
-            <h3 className="text-center text-lg font-semibold mb-8">
-              Trusted by Leading Organizations
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 items-center opacity-80">
-              {[1, 2, 3, 4, 5, 6].map((partner) => (
-                <div
-                  key={partner}
-                  className="bg-white/10 rounded-lg p-4 h-16 flex items-center justify-center hover:bg-white/20 transition-all duration-300"
-                >
-                  <div className="text-blue-200 font-semibold text-sm">
-                    Partner {partner}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Bottom Bar */}
-          <div className="border-t border-blue-400 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <div className="text-blue-100 text-sm mb-4 md:mb-0">
+          <div className="border-t border-blue-400 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <div className="text-blue-100 text-lg mb-4 md:mb-0">
               © 2024 Dream Abroad. All rights reserved.
             </div>
-            <div className="flex space-x-6 text-sm">
+            <div className="flex space-x-6 text-lg">
               <a
                 href="#"
-                className="text-blue-100 hover:text-white transition-colors duration-300"
+                className="text-blue-100 hover:text-white transition-colors duration-300 hover:underline"
               >
                 Privacy Policy
               </a>
               <a
                 href="#"
-                className="text-blue-100 hover:text-white transition-colors duration-300"
+                className="text-blue-100 hover:text-white transition-colors duration-300 hover:underline"
               >
                 Terms of Service
               </a>
               <a
                 href="#"
-                className="text-blue-100 hover:text-white transition-colors duration-300"
+                className="text-blue-100 hover:text-white transition-colors duration-300 hover:underline"
               >
                 Cookie Policy
               </a>
