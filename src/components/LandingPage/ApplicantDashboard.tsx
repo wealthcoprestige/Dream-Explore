@@ -163,7 +163,7 @@ function ApplicantDashboard() {
     if (!imagePath)
       return "https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?semt=ais_hybrid&w=740&q=80"; // Fallback image
     if (imagePath.startsWith("http")) return imagePath;
-    return `https://backend.dreamabroad.online${imagePath}`;
+    return `http://127.0.0.1:8000${imagePath}`;
   };
   // Calculate statistics from the API data
   const calculateStatistics = () => {
@@ -221,7 +221,7 @@ function ApplicantDashboard() {
     try {
       // Assuming authApi is configured for the /accounts/ base URL
       // and the api instance interceptor adds the token.
-      await api.post("http://127.0.0.1:8000/accounts/logout/");
+      await api.post("/accounts/logout/");
     } catch (error) {
       console.error("Logout failed, but clearing session anyway.", error);
     } finally {

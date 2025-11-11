@@ -5,11 +5,16 @@ import { useRouter } from "next/navigation";
 import api from "../axios/axiosInsatance";
 import Header from "./Header";
 
+interface Category {
+  id: string;
+  name: string;
+}
+
 interface Campaign {
-  id: number;
+  id: string;
   title: string;
   description: string;
-  category: number;
+  category: Category;
   location: string;
   duration: string;
   image: string;
@@ -17,17 +22,15 @@ interface Campaign {
   experience_level: string;
   country: string;
   city: string;
+  state: string;
   status: string;
   created_at: string;
-}
-
-interface Category {
-  id: number;
-  name: string;
+  salary: string;
+  remote: string;
 }
 
 interface MappedCampaign {
-  id: number;
+  id: string;
   title: string;
   description: string;
   type: string;
@@ -40,14 +43,16 @@ interface MappedCampaign {
   experience_level: string;
   country: string;
   city: string;
+  state: string;
   status: string;
   days_remaining: number;
+  category_name: string;
 }
 
 function HeroPage() {
   const [activeSlide, setActiveSlide] = useState(0);
   const [activeFilter, setActiveFilter] = useState("All");
-  const [savedOpportunities, setSavedOpportunities] = useState<Set<number>>(
+  const [savedOpportunities, setSavedOpportunities] = useState<Set<string>>(
     new Set()
   );
   const [healthcareSlide, setHealthcareSlide] = useState(0);
@@ -55,6 +60,8 @@ function HeroPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const router = useRouter();
 
   const extractDataFromResponse = <T,>(response: unknown): T[] => {
@@ -83,16 +90,39 @@ function HeroPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoadingMore(true);
         setLoading(true);
         const [campaignsResponse, categoriesResponse] = await Promise.all([
           api.get("/campaigns/"),
           api.get("/categories/"),
         ]);
-        const campaignsData =
-          extractDataFromResponse<Campaign>(campaignsResponse);
+
+        if (
+          campaignsResponse &&
+          typeof campaignsResponse === "object" &&
+          "data" in campaignsResponse
+        ) {
+          const campaignDataContainer = campaignsResponse.data as {
+            results?: Campaign[];
+            next?: string | null;
+          };
+          if (
+            campaignDataContainer &&
+            typeof campaignDataContainer === "object" &&
+            "results" in campaignDataContainer
+          ) {
+            setCampaigns(campaignDataContainer.results ?? []);
+            setNextPageUrl(campaignDataContainer.next ?? null);
+          } else if (Array.isArray(campaignDataContainer)) {
+            setCampaigns(campaignDataContainer);
+            setNextPageUrl(null);
+          }
+        } else {
+          setCampaigns(extractDataFromResponse<Campaign>(campaignsResponse));
+        }
+
         const categoriesData =
           extractDataFromResponse<Category>(categoriesResponse);
-        setCampaigns(campaignsData);
         setCategories(categoriesData);
       } catch {
         setError("Failed to load campaigns. Please try again later.");
@@ -103,36 +133,61 @@ function HeroPage() {
     fetchData();
   }, []);
 
+  const loadMoreCampaigns = async () => {
+    if (!nextPageUrl || loadingMore) return;
+
+    setLoadingMore(true);
+    try {
+      const response = await api.get(nextPageUrl);
+      if (response && typeof response === "object" && "data" in response) {
+        const campaignDataContainer = response.data as {
+          results?: Campaign[];
+          next?: string | null;
+        };
+        if (
+          campaignDataContainer &&
+          typeof campaignDataContainer === "object" &&
+          "results" in campaignDataContainer
+        ) {
+          setCampaigns((prev) => [
+            ...prev,
+            ...(campaignDataContainer.results ?? []),
+          ]);
+          setNextPageUrl(campaignDataContainer.next ?? null);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load more campaigns:", err);
+      // Optionally set an error state for loading more
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop + 1 >=
+        document.documentElement.scrollHeight
+      ) {
+        loadMoreCampaigns();
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [nextPageUrl, loadingMore]);
+
   const getImageUrl = (imagePath: string | undefined): string => {
     if (!imagePath) return "";
     if (imagePath.startsWith("http")) return imagePath;
-    return `https://backend.dreamabroad.online${imagePath}`;
+    return `http://127.0.0.1:8000${imagePath}`;
   };
 
-  const getCategoryName = (categoryId: number): string => {
-    const category = categories.find((cat) => cat.id === categoryId);
+  const getCategoryName = (category: Category): string => {
     return category ? category.name : "General";
-  };
-
-  const getSalaryInfo = (
-    employmentType: string,
-    experienceLevel: string
-  ): string => {
-    const baseSalaries: Record<string, string> = {
-      internship: "$30,000 - $45,000",
-      full_time: "$60,000 - $100,000",
-      contract: "$50,000 - $80,000",
-      temporary: "$40,000 - $60,000",
-    };
-    const experienceBonus: Record<string, string> = {
-      entry: "",
-      mid: " (Mid-level)",
-      senior: " (Senior)",
-      student: " (Student)",
-    };
-    return `${baseSalaries[employmentType] || "$50,000 - $70,000"}${
-      experienceBonus[experienceLevel] || ""
-    }`;
   };
 
   const getDeadline = (createdAt: string): string => {
@@ -159,11 +214,11 @@ function HeroPage() {
     return icons[type] || "fas fa-briefcase";
   };
 
-  const handleApplyNow = (campaignId: number) => {
+  const handleApplyNow = (campaignId: string) => {
     router.push(`/details?campaign_id=${campaignId}`);
   };
 
-  const mappedCampaigns = campaigns.map((campaign) => ({
+  const mappedCampaigns: MappedCampaign[] = campaigns.map((campaign) => ({
     id: campaign.id,
     title: campaign.title,
     description: campaign.description,
@@ -171,24 +226,33 @@ function HeroPage() {
     location: campaign.location,
     duration: campaign.duration,
     image: getImageUrl(campaign.image),
-    salary: getSalaryInfo(campaign.employment_type, campaign.experience_level),
+    salary: campaign.salary || "Competitive",
     deadline: getDeadline(campaign.created_at),
     employment_type: campaign.employment_type,
     experience_level: campaign.experience_level,
     country: campaign.country,
     city: campaign.city,
+    state: campaign.state,
     status: campaign.status,
     days_remaining: getDaysRemaining(getDeadline(campaign.created_at)),
+    category_name: campaign.category.name,
   }));
 
-  const filteredOpportunities = mappedCampaigns.filter(
-    (opp) => activeFilter === "All" || opp.type === activeFilter
+  // Get unique category names for filter buttons
+  const uniqueCategories = Array.from(
+    new Set(mappedCampaigns.map((campaign) => campaign.category_name))
   );
+
+  // Filter campaigns based on active filter
+  const filteredOpportunities = mappedCampaigns.filter((opp) => {
+    if (activeFilter === "All") return true;
+    return opp.category_name === activeFilter;
+  });
 
   const healthcareCampaigns = mappedCampaigns.filter(
     (campaign) =>
-      campaign.type.toLowerCase().includes("health") ||
-      campaign.type.toLowerCase().includes("care") ||
+      campaign.category_name.toLowerCase().includes("health") ||
+      campaign.category_name.toLowerCase().includes("care") ||
       campaign.title.toLowerCase().includes("nurse") ||
       campaign.title.toLowerCase().includes("doctor") ||
       campaign.title.toLowerCase().includes("medical") ||
@@ -225,7 +289,7 @@ function HeroPage() {
     },
   ];
 
-  const toggleSaveOpportunity = (id: number) => {
+  const toggleSaveOpportunity = (id: string) => {
     const newSaved = new Set(savedOpportunities);
     if (newSaved.has(id)) newSaved.delete(id);
     else newSaved.add(id);
@@ -636,27 +700,33 @@ function HeroPage() {
               </p>
             </div>
 
-            {/* Filter Tabs - Responsive */}
+            {/* Filter Tabs - Dynamic based on available categories */}
             <div className="w-full lg:w-auto">
               <div className="flex flex-wrap gap-3 justify-center lg:justify-end">
-                {[
-                  "All",
-                  "Healthcare",
-                  "Education",
-                  "Public Health",
-                  "Scholarships",
-                  "NGO Programs",
-                ].map((filter) => (
+                {/* "All" filter button */}
+                <button
+                  onClick={() => setActiveFilter("All")}
+                  className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 cursor-pointer border-2 ${
+                    activeFilter === "All"
+                      ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/25"
+                      : "bg-white text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700"
+                  } text-sm md:text-base`}
+                >
+                  All
+                </button>
+
+                {/* Dynamic category filter buttons */}
+                {uniqueCategories.map((category) => (
                   <button
-                    key={filter}
-                    onClick={() => setActiveFilter(filter)}
+                    key={category}
+                    onClick={() => setActiveFilter(category)}
                     className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 cursor-pointer border-2 ${
-                      activeFilter === filter
+                      activeFilter === category
                         ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/25"
                         : "bg-white text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700"
                     } text-sm md:text-base`}
                   >
-                    {filter}
+                    {category}
                   </button>
                 ))}
               </div>
@@ -677,8 +747,9 @@ function HeroPage() {
                   No opportunities found
                 </h3>
                 <p className="text-gray-600 mb-8">
-                  Try selecting a different filter or check back later for new
-                  opportunities.
+                  {activeFilter === "All"
+                    ? "There are currently no opportunities available. Please check back later."
+                    : `No opportunities found in the ${activeFilter} category. Try selecting a different filter.`}
                 </p>
                 <button
                   onClick={() => setActiveFilter("All")}
@@ -690,13 +761,15 @@ function HeroPage() {
             </div>
           )}
 
-          {/* Load More Button */}
-          <div className="text-center">
-            <button className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-10 py-4 rounded-full font-semibold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300 inline-flex items-center text-lg">
-              <i className="fas fa-sync-alt mr-3"></i>
-              Load More Opportunities
-            </button>
-          </div>
+          {/* Loading indicator for infinite scroll */}
+          {loadingMore && nextPageUrl && (
+            <div className="text-center py-8">
+              <div className="inline-flex items-center text-gray-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+                <span>Loading more opportunities...</span>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 

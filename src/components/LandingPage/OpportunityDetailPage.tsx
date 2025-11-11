@@ -18,6 +18,7 @@ interface CampaignData {
     duration: string;
     description: string;
     image: string;
+    salary?: string;
     category: {
       name: string;
     };
@@ -172,7 +173,7 @@ function OpportunityDetailPage() {
   const getImageUrl = (imagePath: string | undefined): string => {
     if (!imagePath) return "";
     if (imagePath.startsWith("http")) return imagePath;
-    return `https://backend.dreamabroad.online${imagePath}`;
+    return `http://127.0.0.1:8000${imagePath}`;
   };
 
   // Use actual data if available, otherwise use fallback
@@ -188,7 +189,7 @@ function OpportunityDetailPage() {
           campaignData.campaign?.location ||
           "Location not specified",
         duration: campaignData.campaign?.duration || "Permanent",
-        salary: "Competitive Salary",
+        salary: campaignData.campaign?.salary || "Competitive Salary",
         deadline: "2024-12-31",
         company: campaignData.campaign?.title || "Company not specified",
         companyLogo: getImageUrl(campaignData.campaign?.image),
@@ -415,7 +416,11 @@ function OpportunityDetailPage() {
           }
         });
 
-        const response = await api.post<{ success: boolean }>(
+        // The post method in ApiService returns the full AxiosResponse
+        const response = await api.postWithResponse<{
+          success: boolean;
+          message: string;
+        }>(
           `create/applicant/application/unauthenticated/${campaignId}`,
           unauthSubmitData,
           {
@@ -425,10 +430,12 @@ function OpportunityDetailPage() {
           }
         );
 
-        if (response.success) {
-          setUnauthenticatedSuccess(true);
-          setShowApplicationForm(false);
-          resetForm();
+        if (response.status === 201 && response.data.success) {
+          sessionStorage.setItem(
+            "login_message",
+            "Application successful! Please check your email for your default password and log in to continue."
+          );
+          router.push("/accounts/login");
         }
       }
     } catch (error) {

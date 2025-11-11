@@ -1,6 +1,6 @@
 "use client";
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { authApi } from "../axios/axiosInsatance";
 import { AxiosError } from "axios";
 
@@ -25,6 +25,17 @@ function LoginPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+
+  useEffect(() => {
+    // Check for a message from the application page
+    const message = sessionStorage.getItem("login_message");
+    if (message) {
+      setSuccessMessage(message);
+      // Clear the message so it doesn't show again on refresh
+      sessionStorage.removeItem("login_message");
+    }
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -95,6 +106,13 @@ function LoginPage() {
           <p className="text-blue-100 text-sm">Sign in to your account</p>
         </div>
         <div className="p-6">
+          {successMessage && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-green-700 text-sm text-center">
+                {successMessage}
+              </p>
+            </div>
+          )}
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-600 text-sm text-center">{error}</p>

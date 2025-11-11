@@ -70,6 +70,19 @@ class ApiService {
     return response.data;
   }
 
+  public async postWithResponse<T>(
+    url: string,
+    data?: unknown,
+    config?: AxiosRequestConfig
+  ): Promise<AxiosResponse<T>> {
+    const response: AxiosResponse<T> = await this.axiosInstance.post(
+      url,
+      data,
+      config
+    );
+    return response;
+  }
+
   public async put<T>(
     url: string,
     data?: unknown,

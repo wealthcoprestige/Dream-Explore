@@ -84,7 +84,7 @@ function Header() {
     if (!imagePath)
       return "https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?semt=ais_hybrid&w=740&q=80"; // Fallback image
     if (imagePath.startsWith("http")) return imagePath;
-    return `https://backend.dreamabroad.online${imagePath}`;
+    return `http://127.0.0.1:8000${imagePath}`;
   };
 
   const handleNavigation = (path: string) => {
