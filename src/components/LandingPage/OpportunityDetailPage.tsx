@@ -582,7 +582,7 @@ function OpportunityDetailPage() {
                   </div>
                 )}
                 <div className="absolute bottom-4 left-4 bg-blue-800 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                  {opportunity.type}
+                  {campaignData?.campaign?.category?.name}
                 </div>
               </div>
 
