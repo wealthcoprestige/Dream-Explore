@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AxiosError, AxiosResponse } from "axios";
 import Image from "next/image";
 import Header from "./Header";
+import companyLogo from "../../../public/logo.png";
 import api from "../axios/axiosInsatance";
 
 // Define TypeScript interfaces
@@ -622,7 +623,7 @@ function OpportunityDetailPage() {
               <div className="flex items-center space-x-4">
                 {opportunity.companyLogo && (
                   <Image
-                    src={opportunity.companyLogo}
+                    src={companyLogo}
                     alt={opportunity.company}
                     width={64}
                     height={64}
