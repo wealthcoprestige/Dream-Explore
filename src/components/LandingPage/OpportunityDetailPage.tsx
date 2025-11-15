@@ -410,15 +410,24 @@ function OpportunityDetailPage() {
         // Unauthenticated user flow
         const unauthSubmitData = new FormData();
 
-        for (const key in formData) {
-          const value = formData[key as keyof FormData];
-          if (value instanceof File) {
-            // Compress file before appending
-            const compressed = await compressFile(value);
-            unauthSubmitData.append(key, compressed);
-          } else if (value !== null && value !== "") {
-            unauthSubmitData.append(key, value as string);
+        try {
+          for (const key in formData) {
+            const value = formData[key as keyof FormData];
+            if (value instanceof File) {
+              // Compress file before appending
+              const compressed = await compressFile(value);
+              unauthSubmitData.append(key, compressed);
+            } else if (value !== null && value !== "") {
+              unauthSubmitData.append(key, value as string);
+            }
           }
+        } catch (compressionError) {
+          console.error("File compression failed:", compressionError);
+          setSubmitError(
+            "Failed to process uploaded files. Please try smaller or different files."
+          );
+          setSubmitting(false);
+          return; // Stop the submission process
         }
 
         // The post method in ApiService returns the full AxiosResponse
@@ -727,8 +736,8 @@ function OpportunityDetailPage() {
 
       {/* Application Form Modal */}
       {showApplicationForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full my-8">
             <div className="p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-800">
