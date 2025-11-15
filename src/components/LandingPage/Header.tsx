@@ -84,12 +84,23 @@ function Header() {
     if (!imagePath)
       return "https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?semt=ais_hybrid&w=740&q=80"; // Fallback image
     if (imagePath.startsWith("http")) return imagePath;
-    return `http://127.0.0.1:8000${imagePath}`;
+    return `http://backend.dreamabroad.online${imagePath}`;
   };
 
   const handleNavigation = (path: string) => {
     router.push(path);
     setIsMobileMenuOpen(false);
+  };
+
+  // Determine if a navigation item is active
+  const isActive = (path: string) => {
+    const currentPathWithQuery = router.asPath; // e.g., /dashboard?tab=applications
+    // Special handling for dashboard tabs to match query params
+    if (path.startsWith("/dashboard?tab=")) {
+      return currentPathWithQuery === path;
+    }
+    // For other paths, match the base pathname
+    return pathname === path;
   };
 
   return (
@@ -216,11 +227,69 @@ function Header() {
                         {applicant.full_name}
                       </div>
                       <button
-                        onClick={() => handleNavigation("/dashboard")}
+                        onClick={() =>
+                          handleNavigation("/dashboard?tab=profile")
+                        }
                         className="text-sm text-blue-600 hover:underline font-medium"
                       >
-                        View Dashboard
+                        View Profile
                       </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Dashboard Navigation (for authenticated users) */}
+                {isAuthenticated && (
+                  <div className="space-y-2 mb-6">
+                    <div className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase">
+                      Dashboard
+                    </div>
+                    {[
+                      {
+                        name: "Overview",
+                        path: "/dashboard?tab=overview",
+                        icon: "fa-home",
+                      },
+                      {
+                        name: "Applications",
+                        path: "/dashboard?tab=applications",
+                        icon: "fa-file-alt",
+                      },
+                      {
+                        name: "Appointments",
+                        path: "/dashboard?tab=appointment",
+                        icon: "fa-calendar",
+                      },
+                      {
+                        name: "Billing",
+                        path: "/dashboard?tab=billing",
+                        icon: "fa-credit-card",
+                      },
+                    ].map((item) => (
+                      <button
+                        key={item.name}
+                        onClick={() => handleNavigation(item.path)}
+                        className={`w-full text-left p-4 font-medium rounded-lg transition-colors duration-200 flex items-center
+                          ${
+                            isActive(item.path)
+                              ? "bg-blue-100 text-blue-800"
+                              : "text-gray-700 hover:bg-blue-50 hover:text-blue-800"
+                          }`}
+                      >
+                        <i
+                          className={`fas ${
+                            item.icon
+                          } mr-3 text-sm w-4 text-center ${
+                            isActive(item.path)
+                              ? "text-blue-800"
+                              : "text-blue-500"
+                          }`}
+                        ></i>
+                        {item.name}
+                      </button>
+                    ))}
+                    <div className="pt-4">
+                      <div className="border-t border-gray-200"></div>
                     </div>
                   </div>
                 )}
@@ -231,9 +300,20 @@ function Header() {
                     <button
                       key={item.name}
                       onClick={() => handleNavigation(item.path)}
-                      className="w-full text-left p-4 text-gray-700 font-medium rounded-lg hover:bg-blue-50 hover:text-blue-800 transition-colors duration-200 flex items-center"
+                      className={`w-full text-left p-4 font-medium rounded-lg transition-colors duration-200 flex items-center
+                        ${
+                          isActive(item.path)
+                            ? "bg-blue-100 text-blue-800"
+                            : "text-gray-700 hover:bg-blue-50 hover:text-blue-800"
+                        }`}
                     >
-                      <i className="fas fa-chevron-right text-blue-500 mr-3 text-sm"></i>
+                      <i
+                        className={`fas fa-chevron-right mr-3 text-sm w-4 text-center ${
+                          isActive(item.path)
+                            ? "text-blue-800"
+                            : "text-blue-500"
+                        }`}
+                      ></i>
                       {item.name}
                     </button>
                   ))}

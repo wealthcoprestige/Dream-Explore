@@ -1,8 +1,9 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { AxiosError } from "axios";
+import Header from "./Header"; // Import the Header component
 import api from "../axios/axiosInsatance";
 
 interface User {
@@ -113,7 +114,10 @@ function ApplicantDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [otherOpportunities, setOtherOpportunities] = useState<Campaign[]>([]);
 
+  const sidebarRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     if (!token) {
@@ -122,6 +126,39 @@ function ApplicantDashboard() {
       fetchDashboardData();
     }
   }, [router]);
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab && tabs.some((t) => t.id === tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
+  // Click outside to close sidebar
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        isMobileMenuOpen &&
+        sidebarRef.current &&
+        !sidebarRef.current.contains(event.target as Node)
+      ) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscapeKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscapeKey);
+    };
+  }, [isMobileMenuOpen]);
 
   const fetchDashboardData = async () => {
     try {
@@ -217,6 +254,11 @@ function ApplicantDashboard() {
     return statusMap[status] || status;
   };
 
+  const handleMobileNav = (tab: string) => {
+    setActiveTab(tab);
+    setIsMobileMenuOpen(false);
+  };
+
   const handleLogout = async () => {
     try {
       // Assuming authApi is configured for the /accounts/ base URL
@@ -309,119 +351,8 @@ function ApplicantDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-40">
-        <div className="container mx-auto px-4">
-          <nav className="flex justify-between items-center py-4">
-            <button
-              onClick={() => router.push("/")}
-              className="flex items-center text-xl md:text-2xl font-bold text-blue-800"
-            >
-              <i className="fas fa-globe-americas mr-2 text-xl md:text-2xl"></i>
-              <span className="hidden sm:inline">DreamExplore</span>
-              <span className="sm:hidden">DE</span>
-            </button>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-4">
-              <button
-                onClick={() => router.push("/")}
-                className="bg-gradient-to-r from-blue-800 to-blue-600 text-white px-4 py-2 rounded-full font-semibold shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-sm"
-              >
-                Find Opportunities
-              </button>
-              <div className="relative">
-                <button
-                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="flex items-center space-x-3 bg-white border border-gray-200 rounded-xl px-4 py-2 hover:shadow-md transition-all duration-300"
-                >
-                  <Image
-                    src={getImageUrl(applicant.profile_photo)}
-                    alt="Profile"
-                    width={32}
-                    height={32}
-                    className="w-8 h-8 rounded-full object-cover"
-                  />
-                  <span className="text-gray-700 font-medium hidden lg:inline">
-                    {applicant.full_name}
-                  </span>
-                  <i className="fas fa-chevron-down text-gray-400"></i>
-                </button>
-                {isMobileMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 z-50">
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors"
-                    >
-                      <i className="fas fa-sign-out-alt mr-2"></i>
-                      Logout
-                    </button>
-                    <button
-                      onClick={() => setActiveTab("profile")}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                    >
-                      <i className="fas fa-user-circle mr-2"></i>
-                      View Profile
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-            {/* Mobile Menu Button */}
-            <div className="flex items-center space-x-2 md:hidden">
-              <button className="bg-gradient-to-r from-blue-800 to-blue-600 text-white px-3 py-2 rounded-full font-semibold text-sm">
-                <i className="fas fa-search"></i>
-              </button>
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-300"
-              >
-                <i
-                  className={`fas ${
-                    isMobileMenuOpen ? "fa-times" : "fa-bars"
-                  } text-gray-600 text-lg`}
-                ></i>
-              </button>
-            </div>
-          </nav>
-
-          {/* Mobile Navigation Menu */}
-          {isMobileMenuOpen && (
-            <div className="md:hidden bg-white border-t border-gray-200 py-4">
-              <div className="flex flex-col space-y-4">
-                <button className="flex items-center space-x-3 p-3 rounded-xl hover:bg-blue-50 transition-colors duration-300">
-                  <Image
-                    src={getImageUrl(applicant.profile_photo)}
-                    alt="Profile"
-                    width={40}
-                    height={40}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                  <div className="text-left">
-                    <div className="font-semibold text-gray-800">
-                      {applicant.full_name}
-                    </div>
-                    <div className="text-sm text-gray-600">View Profile</div>
-                  </div>
-                </button>
-                <button
-                  onClick={() => router.push("/")}
-                  className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold"
-                >
-                  Find Opportunities
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="w-full bg-red-600 text-white py-3 rounded-xl font-semibold mt-4"
-                >
-                  <i className="fas fa-sign-out-alt mr-2"></i>
-                  Logout
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </header>
+      {/* Use the reusable Header component */}
+      <Header />
 
       {/* Dashboard Content */}
       <div className="container mx-auto px-4 py-6">
