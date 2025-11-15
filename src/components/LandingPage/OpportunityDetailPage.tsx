@@ -688,9 +688,12 @@ function OpportunityDetailPage() {
                   )}
                 </button>
 
-                <button className="w-full border-2 border-blue-600 text-blue-600 py-4 rounded-xl font-semibold mt-3 hover:bg-blue-50 transition-all duration-300">
-                  <i className="far fa-bookmark mr-2"></i>
-                  Save Opportunity
+                <button
+                  onClick={() => router.push("/")}
+                  className="w-full border-2 border-blue-600 text-blue-600 py-4 rounded-xl font-semibold mt-3 hover:bg-blue-50 transition-all duration-300"
+                >
+                  <i className="far fa-compass mr-2"></i>
+                  Explore Other Opportunities
                 </button>
               </div>
 
