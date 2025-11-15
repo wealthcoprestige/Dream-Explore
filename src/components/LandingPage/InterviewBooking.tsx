@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import api, { AxiosError } from "../axios/axiosInsatance";
+import Header from "./Header";
 
 interface Slot {
   id: string;
@@ -198,65 +199,7 @@ function InterviewBooking() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-40">
-        <div className="container mx-auto px-4">
-          <nav className="flex justify-between items-center py-4">
-            <button
-              onClick={() => router.push("/")}
-              className="flex items-center text-xl font-bold text-blue-800"
-            >
-              <i className="fas fa-globe-americas mr-2"></i>
-              <span className="hidden sm:inline">Dream Abroad</span>
-              <span className="sm:hidden">DA</span>
-            </button>
-
-            <div className="hidden md:flex items-center space-x-8">
-              {[
-                { name: "Home", path: "/" },
-                { name: "About", path: "/about" },
-                { name: "Services", path: "/services" },
-                { name: "Contact", path: "/contact" },
-              ].map((item) => (
-                <div
-                  key={item.name}
-                  onClick={() => router.push(item.path)}
-                  className="text-gray-800 font-medium hover:text-blue-800 transition-colors duration-300 cursor-pointer"
-                >
-                  {item.name}
-                </div>
-              ))}
-            </div>
-
-            {/* Desktop Buttons */}
-            <div className="hidden md:flex items-center space-x-4">
-              {isAuthenticated ? (
-                <button
-                  onClick={() => router.push("/dashboard")}
-                  className="bg-gradient-to-r from-blue-800 to-blue-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-                >
-                  Back to Dashboard
-                </button>
-              ) : (
-                <>
-                  <button
-                    onClick={() => router.push("/")}
-                    className="text-gray-800 font-medium hover:text-blue-800 transition-colors duration-300"
-                  >
-                    Find Opportunities
-                  </button>
-                  <button
-                    onClick={() => router.push("/accounts/login")}
-                    className="bg-gradient-to-r from-blue-800 to-blue-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-                  >
-                    Login
-                  </button>
-                </>
-              )}
-            </div>
-          </nav>
-        </div>
-      </header>
+      <Header />
 
       <div className="container mx-auto px-4 py-4">
         <div className="max-w-6xl mx-auto">

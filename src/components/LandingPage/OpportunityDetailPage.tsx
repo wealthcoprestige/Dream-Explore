@@ -6,6 +6,7 @@ import Image from "next/image";
 import Header from "./Header";
 import companyLogo from "../../../public/logo.png";
 import api from "../axios/axiosInsatance";
+import { compressFile } from "../utils/fileCompressor";
 
 // Define TypeScript interfaces
 interface CampaignData {
@@ -408,12 +409,17 @@ function OpportunityDetailPage() {
       } else {
         // Unauthenticated user flow
         const unauthSubmitData = new FormData();
-        Object.keys(formData).forEach((key) => {
+
+        for (const key in formData) {
           const value = formData[key as keyof FormData];
-          if (value !== null && value !== "") {
-            unauthSubmitData.append(key, value as string | Blob);
+          if (value instanceof File) {
+            // Compress file before appending
+            const compressed = await compressFile(value);
+            unauthSubmitData.append(key, compressed);
+          } else if (value !== null && value !== "") {
+            unauthSubmitData.append(key, value as string);
           }
-        });
+        }
 
         // The post method in ApiService returns the full AxiosResponse
         const response = await api.postWithResponse<{

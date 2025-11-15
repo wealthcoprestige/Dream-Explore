@@ -157,12 +157,12 @@ function LoginPage() {
                   Remember me
                 </label>
               </div>
-              <a
+              {/* <a
                 href="#"
                 className="text-blue-600 hover:text-blue-500 font-medium"
               >
                 Forgot password?
-              </a>
+              </a> */}
             </div>
             <button
               type="submit"
@@ -192,7 +192,7 @@ function LoginPage() {
                 </span>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            {/* <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 disabled={isLoading}
@@ -209,7 +209,7 @@ function LoginPage() {
                 <i className="fab fa-linkedin text-blue-600 mr-2 text-sm"></i>
                 LinkedIn
               </button>
-            </div>
+            </div> */}
           </form>
         </div>
       </div>
