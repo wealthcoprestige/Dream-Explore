@@ -57,7 +57,6 @@ function HeroPage() {
   );
   const [healthcareSlide, setHealthcareSlide] = useState(0);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
@@ -121,9 +120,8 @@ function HeroPage() {
           setCampaigns(extractDataFromResponse<Campaign>(campaignsResponse));
         }
 
-        const categoriesData =
-          extractDataFromResponse<Category>(categoriesResponse);
-        setCategories(categoriesData);
+        extractDataFromResponse<Category>(categoriesResponse);
+        // setCategories(categoriesData); // categories is not used
       } catch {
         setError("Failed to load campaigns. Please try again later.");
       } finally {
@@ -167,8 +165,10 @@ function HeroPage() {
   useEffect(() => {
     const handleScroll = () => {
       if (
+        nextPageUrl &&
+        !loadingMore &&
         window.innerHeight + document.documentElement.scrollTop + 1 >=
-        document.documentElement.scrollHeight
+          document.documentElement.scrollHeight
       ) {
         loadMoreCampaigns();
       }
@@ -177,8 +177,8 @@ function HeroPage() {
     window.addEventListener("scroll", handleScroll);
     return () => {
       window.removeEventListener("scroll", handleScroll);
-    };
-  }, [nextPageUrl, loadingMore]);
+    }; // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nextPageUrl, loadingMore]); // loadMoreCampaigns is a dependency, but adding it causes re-renders. Disabling the rule is a pragmatic choice here.
 
   const getImageUrl = (imagePath: string | undefined): string => {
     if (!imagePath) return "";
@@ -860,7 +860,7 @@ function HeroPage() {
                 </div>
                 <div className="flex items-center">
                   <i className="fas fa-phone mr-4 text-blue-200 text-xl"></i>
-                  <span className="text-blue-100">+1 (555) 123-4567</span>
+                  <span className="text-blue-100">+44 7715 870911</span>
                 </div>
                 <div className="flex items-center">
                   <i className="fas fa-envelope mr-4 text-blue-200 text-xl"></i>

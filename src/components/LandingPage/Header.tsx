@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
+import { HeaderNavItems } from "./HeaderNavItems";
 import api from "../axios/axiosInsatance";
 
 interface Applicant {
@@ -90,17 +91,6 @@ function Header() {
   const handleNavigation = (path: string) => {
     router.push(path);
     setIsMobileMenuOpen(false);
-  };
-
-  // Determine if a navigation item is active
-  const isActive = (path: string) => {
-    const currentPathWithQuery = router.asPath; // e.g., /dashboard?tab=applications
-    // Special handling for dashboard tabs to match query params
-    if (path.startsWith("/dashboard?tab=")) {
-      return currentPathWithQuery === path;
-    }
-    // For other paths, match the base pathname
-    return pathname === path;
   };
 
   return (
@@ -238,86 +228,13 @@ function Header() {
                   </div>
                 )}
 
-                {/* Dashboard Navigation (for authenticated users) */}
-                {isAuthenticated && (
-                  <div className="space-y-2 mb-6">
-                    <div className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase">
-                      Dashboard
-                    </div>
-                    {[
-                      {
-                        name: "Overview",
-                        path: "/dashboard?tab=overview",
-                        icon: "fa-home",
-                      },
-                      {
-                        name: "Applications",
-                        path: "/dashboard?tab=applications",
-                        icon: "fa-file-alt",
-                      },
-                      {
-                        name: "Appointments",
-                        path: "/dashboard?tab=appointment",
-                        icon: "fa-calendar",
-                      },
-                      {
-                        name: "Billing",
-                        path: "/dashboard?tab=billing",
-                        icon: "fa-credit-card",
-                      },
-                    ].map((item) => (
-                      <button
-                        key={item.name}
-                        onClick={() => handleNavigation(item.path)}
-                        className={`w-full text-left p-4 font-medium rounded-lg transition-colors duration-200 flex items-center
-                          ${
-                            isActive(item.path)
-                              ? "bg-blue-100 text-blue-800"
-                              : "text-gray-700 hover:bg-blue-50 hover:text-blue-800"
-                          }`}
-                      >
-                        <i
-                          className={`fas ${
-                            item.icon
-                          } mr-3 text-sm w-4 text-center ${
-                            isActive(item.path)
-                              ? "text-blue-800"
-                              : "text-blue-500"
-                          }`}
-                        ></i>
-                        {item.name}
-                      </button>
-                    ))}
-                    <div className="pt-4">
-                      <div className="border-t border-gray-200"></div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Navigation Items */}
-                <div className="space-y-2 mb-6">
-                  {navItems.map((item) => (
-                    <button
-                      key={item.name}
-                      onClick={() => handleNavigation(item.path)}
-                      className={`w-full text-left p-4 font-medium rounded-lg transition-colors duration-200 flex items-center
-                        ${
-                          isActive(item.path)
-                            ? "bg-blue-100 text-blue-800"
-                            : "text-gray-700 hover:bg-blue-50 hover:text-blue-800"
-                        }`}
-                    >
-                      <i
-                        className={`fas fa-chevron-right mr-3 text-sm w-4 text-center ${
-                          isActive(item.path)
-                            ? "text-blue-800"
-                            : "text-blue-500"
-                        }`}
-                      ></i>
-                      {item.name}
-                    </button>
-                  ))}
-                </div>
+                <Suspense fallback={<div className="p-4">Loading menu...</div>}>
+                  <HeaderNavItems
+                    isAuthenticated={isAuthenticated}
+                    handleNavigation={handleNavigation}
+                    navItems={navItems}
+                  />
+                </Suspense>
 
                 {/* Action Buttons */}
                 <div className="space-y-3 border-t pt-6">

@@ -47,7 +47,7 @@ function ContactPage() {
       country: "United Kingdom",
       city: "Bishop&apos;s Stortford",
       address: "12 Potter Street, Bishop&apos;s Stortford, Hertfordshire CM23 3UT",
-      phone: "+44 (0) 1279 654 321",
+      phone: "+44 7715 870911",
       email: "uk@dreamabroadopportunities.com",
       hours: "Mon-Fri: 9:00 AM - 6:00 PM",
       image:
@@ -59,7 +59,7 @@ function ContactPage() {
       country: "Canada",
       city: "Stratford",
       address: "17 Ontario Street, Stratford, Ontario N5A 3H1",
-      phone: "+1 (519) 271-4567",
+      phone: "",
       email: "canada@dreamabroadopportunities.com",
       hours: "Mon-Fri: 9:00 AM - 6:00 PM",
       image:
@@ -85,7 +85,7 @@ function ContactPage() {
       icon: "fas fa-phone",
       title: "Call Us",
       description: "Speak directly with our immigration experts",
-      details: "+1 (555) 123-4567",
+      details: "",
       action: "tel:+15551234567",
     },
     {
@@ -523,7 +523,7 @@ function ContactPage() {
               onClick={() => (window.location.href = "tel:+15551234567")}
               className="bg-white text-green-800 px-8 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
             >
-              Call Now: +1 (555) 123-4567
+              Call Now: 
             </button>
             <button
               onClick={() => router.push("/book-interview")}
@@ -612,11 +612,11 @@ function ContactPage() {
               <div className="space-y-3 text-white/80">
                 <p className="flex items-center">
                   <i className="fas fa-phone mr-3"></i>
-                  +1 (555) 123-4567
+                  
                 </p>
                 <p className="flex items-center">
                   <i className="fas fa-envelope mr-3"></i>
-                  urgent@dreamabroadopportunities.com
+                  info@dreamabroad.online
                 </p>
                 <p className="flex items-center">
                   <i className="fas fa-clock mr-3"></i>

@@ -539,7 +539,7 @@ function AboutPage() {
               <div className="space-y-3 text-white/80">
                 <p className="flex items-center">
                   <i className="fas fa-phone mr-3"></i>
-                  +1 (555) 123-4567
+                  +44 7715 870911
                 </p>
                 <p className="flex items-center">
                   <i className="fas fa-envelope mr-3"></i>

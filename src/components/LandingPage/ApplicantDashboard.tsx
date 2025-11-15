@@ -1,7 +1,7 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import Image from "next/image";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AxiosError } from "axios";
 import Header from "./Header"; // Import the Header component
 import api from "../axios/axiosInsatance";
@@ -114,9 +114,19 @@ function ApplicantDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [otherOpportunities, setOtherOpportunities] = useState<Campaign[]>([]);
 
+  const tabs = useMemo(
+    () => [
+      { id: "overview", label: "Overview", icon: "fas fa-home" },
+      { id: "applications", label: "Applications", icon: "fas fa-file-alt" },
+      { id: "appointment", label: "Appointments", icon: "fas fa-calendar" },
+      { id: "billing", label: "Billing", icon: "fas fa-credit-card" },
+      { id: "profile", label: "Profile", icon: "fas fa-user" },
+    ],
+    []
+  );
+
   const sidebarRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   useEffect(() => {
     const token = localStorage.getItem("access_token");
@@ -132,7 +142,7 @@ function ApplicantDashboard() {
     if (tab && tabs.some((t) => t.id === tab)) {
       setActiveTab(tab);
     }
-  }, [searchParams]);
+  }, [searchParams, tabs]);
 
   // Click outside to close sidebar
   useEffect(() => {
@@ -254,26 +264,6 @@ function ApplicantDashboard() {
     return statusMap[status] || status;
   };
 
-  const handleMobileNav = (tab: string) => {
-    setActiveTab(tab);
-    setIsMobileMenuOpen(false);
-  };
-
-  const handleLogout = async () => {
-    try {
-      // Assuming authApi is configured for the /accounts/ base URL
-      // and the api instance interceptor adds the token.
-      await api.post("/accounts/logout/");
-    } catch (error) {
-      console.error("Logout failed, but clearing session anyway.", error);
-    } finally {
-      // Always clear local storage and redirect
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
-      router.push("/accounts/login");
-    }
-  };
-
   const handleViewDetails = (campaignId: string) => {
     router.push(`/details?campaign_id=${campaignId}`);
   };
@@ -289,15 +279,6 @@ function ApplicantDashboard() {
     setShowPaymentModal(false);
     setSelectedBill(null);
   };
-
-  const tabs = [
-    { id: "overview", label: "Overview", icon: "fas fa-home" },
-    { id: "applications", label: "Applications", icon: "fas fa-file-alt" },
-    { id: "appointment", label: "Appointments", icon: "fas fa-calendar" },
-    { id: "billing", label: "Billing", icon: "fas fa-credit-card" },
-    { id: "profile", label: "Profile", icon: "fas fa-user" },
-  ];
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">

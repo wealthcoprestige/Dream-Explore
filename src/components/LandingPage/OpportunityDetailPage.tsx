@@ -101,8 +101,6 @@ function OpportunityDetailPage() {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [submitSuccess, setSubmitSuccess] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string>("");
-  const [unauthenticatedSuccess, setUnauthenticatedSuccess] =
-    useState<boolean>(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   // Form data matching the Django Applicant and Application models
@@ -460,33 +458,6 @@ function OpportunityDetailPage() {
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      full_name: "",
-      email: "",
-      phone_number: "",
-      location: "",
-      whats_app: "",
-      passport_number: "",
-      nationality: "",
-      id_card: "",
-      card_image_front: null,
-      card_image_back: null,
-      date_of_birth: "",
-      profile_photo: null,
-      bio: "",
-      linkedin_profile: "",
-      website_or_portfolio: "",
-      languages_spoken: "",
-      education: "",
-      resume: null,
-      certification: null,
-      cover_letter: null,
-      available_start_date: "",
-      qualification: "",
-    });
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -528,32 +499,6 @@ function OpportunityDetailPage() {
           <div className="flex items-center">
             <i className="fas fa-check-circle mr-2"></i>
             Application submitted successfully! Redirecting to your dashboard...
-          </div>
-        </div>
-      )}
-
-      {/* Success Modal for Unauthenticated User */}
-      {unauthenticatedSuccess && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full text-center p-8">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <i className="fas fa-check text-green-600 text-3xl"></i>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              Your Journey Begins!
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Thank you for applying! We&apos;ve received your application and
-              created an account for you. Your login details have been sent to
-              your email. Please check your inbox (and spam folder) to access
-              your applicant dashboard.
-            </p>
-            <button
-              onClick={() => router.push("/accounts/login")}
-              className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors"
-            >
-              Proceed to Login
-            </button>
           </div>
         </div>
       )}
