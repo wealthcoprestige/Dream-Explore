@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import api, { AxiosError } from "../axios/axiosInsatance";
 import Header from "./Header";
 
@@ -49,7 +48,6 @@ function InterviewBooking() {
   const [applicant, setApplicant] = useState<Applicant | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const router = useRouter();
   const interviewTypes = [
     { value: "video", label: "Video", icon: "fas fa-video" },
     { value: "phone", label: "Phone", icon: "fas fa-phone" },

@@ -82,20 +82,75 @@ interface Opportunity {
 
 // Helper function to safely extract data from API response
 const extractDataFromResponse = (response: unknown): CampaignData | null => {
-  // If response has data property (Axios structure)
   if (response && typeof response === "object" && "data" in response) {
     return response.data as CampaignData;
   }
-  // If response is the data directly
   if (response && typeof response === "object") {
     return response as CampaignData;
   }
   return null;
 };
 
+// Mobile detection helper
+const isMobileDevice = (): boolean => {
+  if (typeof window === "undefined") return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  );
+};
+
+// File validation helper
+const validateFile = (file: File, fieldName: string): string | null => {
+  const maxSize = 10 * 1024 * 1024; // 10MB
+  const imageTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+  const documentTypes = [
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ];
+
+  if (file.size > maxSize) {
+    return `${fieldName} must be smaller than 10MB`;
+  }
+
+  if (fieldName.includes("image") && !imageTypes.includes(file.type)) {
+    return `${fieldName} must be an image (JPEG, PNG, WebP)`;
+  }
+
+  if (fieldName === "resume" && !documentTypes.includes(file.type)) {
+    return "Resume must be a PDF or Word document";
+  }
+
+  if (fieldName === "cover_letter" && !documentTypes.includes(file.type)) {
+    return "Cover letter must be a PDF or Word document";
+  }
+
+  return null;
+};
+
+// API call with retry logic for mobile networks
+const apiCallWithRetry = async <T>(
+  apiCall: () => Promise<T>,
+  retries = 3,
+  delay = 1000
+): Promise<T> => {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      return await apiCall();
+    } catch (error) {
+      if (attempt === retries) throw error;
+      
+      // Exponential backoff
+      const waitTime = delay * Math.pow(2, attempt - 1);
+      console.log(`Retry attempt ${attempt} after ${waitTime}ms...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+  }
+  throw new Error("All retry attempts failed");
+};
+
 function OpportunityDetailPage() {
-  const [showApplicationForm, setShowApplicationForm] =
-    useState<boolean>(false);
+  const [showApplicationForm, setShowApplicationForm] = useState<boolean>(false);
   const [selectedImage, setSelectedImage] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [campaignData, setCampaignData] = useState<CampaignData | null>(null);
@@ -103,10 +158,10 @@ function OpportunityDetailPage() {
   const [submitSuccess, setSubmitSuccess] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string>("");
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
 
   // Form data matching the Django Applicant and Application models
   const [formData, setFormData] = useState<FormData>({
-    // Applicant fields
     full_name: "",
     email: "",
     phone_number: "",
@@ -124,8 +179,6 @@ function OpportunityDetailPage() {
     website_or_portfolio: "",
     languages_spoken: "",
     education: "",
-
-    // Application fields
     resume: null,
     certification: null,
     cover_letter: null,
@@ -138,6 +191,8 @@ function OpportunityDetailPage() {
   const router = useRouter();
 
   useEffect(() => {
+    setIsMobile(isMobileDevice());
+    
     const fetchData = async () => {
       if (!campaignId) {
         console.error("No campaign ID provided");
@@ -147,13 +202,14 @@ function OpportunityDetailPage() {
 
       try {
         setLoading(true);
-        const response = await api.get(`/compaign/details/${campaignId}`);
-
-        // Use helper function to safely extract data
+        const response = await apiCallWithRetry(() => 
+          api.get(`/compaign/details/${campaignId}`)
+        );
         const responseData = extractDataFromResponse(response);
         setCampaignData(responseData);
       } catch (error) {
         console.error("Error fetching campaign data:", error);
+        setSubmitError("Failed to load opportunity details. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -162,10 +218,7 @@ function OpportunityDetailPage() {
     fetchData();
 
     // Check for authentication token
-    const token =
-      typeof window !== "undefined"
-        ? localStorage.getItem("access_token")
-        : null;
+    const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
     setIsAuthenticated(!!token);
   }, [campaignId]);
 
@@ -173,7 +226,7 @@ function OpportunityDetailPage() {
   const getImageUrl = (imagePath: string | undefined): string => {
     if (!imagePath) return "";
     if (imagePath.startsWith("http")) return imagePath;
-    return `http://127.0.0.1:8000${imagePath}`;
+    return `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000'}${imagePath}`;
   };
 
   // Use actual data if available, otherwise use fallback
@@ -193,51 +246,25 @@ function OpportunityDetailPage() {
         deadline: "2024-12-31",
         company: campaignData.campaign?.title || "Company not specified",
         companyLogo: getImageUrl(campaignData.campaign?.image),
-
         images:
           campaignData.gallery?.map((item) => getImageUrl(item.image)) ||
           [getImageUrl(campaignData.campaign?.image)].filter(Boolean),
-
         description:
           campaignData.campaign?.description ||
           "Join our team for an exciting opportunity.",
-
         fullDescription:
           campaignData.compaign_benefits?.[0]?.full_description ||
           campaignData.campaign?.description ||
-          `
-      This position offers great opportunities for professional growth and development.
-      Join our dedicated team and make a difference in healthcare.
-    `,
-
-        requirements: Array.isArray(
-          campaignData.compaign_benefits?.[0]?.requirements
-        )
+          `This position offers great opportunities for professional growth and development. Join our dedicated team and make a difference in healthcare.`,
+        requirements: Array.isArray(campaignData.compaign_benefits?.[0]?.requirements)
           ? campaignData.compaign_benefits[0].requirements
-          : [
-              "Relevant qualifications and experience",
-              "Strong communication skills",
-              "Team player mentality",
-            ],
-
-        responsibilities: Array.isArray(
-          campaignData.compaign_benefits?.[0]?.responsibilities
-        )
+          : ["Relevant qualifications and experience", "Strong communication skills", "Team player mentality"],
+        responsibilities: Array.isArray(campaignData.compaign_benefits?.[0]?.responsibilities)
           ? campaignData.compaign_benefits[0].responsibilities
-          : [
-              "Perform duties as required",
-              "Collaborate with team members",
-              "Maintain professional standards",
-            ],
-
+          : ["Perform duties as required", "Collaborate with team members", "Maintain professional standards"],
         benefits: Array.isArray(campaignData.compaign_benefits?.[0]?.benefit)
           ? campaignData.compaign_benefits[0].benefit
-          : [
-              "Competitive compensation",
-              "Professional development",
-              "Great work environment",
-            ],
-
+          : ["Competitive compensation", "Professional development", "Great work environment"],
         applicationProcess: [
           "Submit online application",
           "Initial screening",
@@ -246,7 +273,6 @@ function OpportunityDetailPage() {
         ],
       }
     : {
-        // Fallback data while loading or if no data
         id: 7,
         title: "Loading...",
         type: "Loading...",
@@ -269,22 +295,39 @@ function OpportunityDetailPage() {
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-
-    if (e.target instanceof HTMLInputElement && e.target.files) {
-      const files = e.target.files;
-      setFormData((prev) => ({ ...prev, [name]: files[0] }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFileUpload = (
+  const handleFileUpload = async (
     e: ChangeEvent<HTMLInputElement>,
     fieldName: keyof FormData
   ) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFormData((prev) => ({ ...prev, [fieldName]: file }));
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      
+      // Validate file
+      const validationError = validateFile(file, fieldName);
+      if (validationError) {
+        setSubmitError(validationError);
+        e.target.value = ""; // Reset file input
+        return;
+      }
+
+      try {
+        let processedFile = file;
+        
+        // Compress images on mobile devices or large files
+        if (file.type.startsWith('image/') && (isMobile || file.size > 2 * 1024 * 1024)) {
+          processedFile = await compressFile(file);
+        }
+        
+        setFormData((prev) => ({ ...prev, [fieldName]: processedFile }));
+        setSubmitError(""); // Clear any previous errors
+      } catch (error) {
+        console.error("Error processing file:", error);
+        setSubmitError(`Failed to process ${fieldName}. Please try another file.`);
+        e.target.value = ""; // Reset file input
+      }
     }
   };
 
@@ -298,30 +341,49 @@ function OpportunityDetailPage() {
       "nationality",
       "id_card",
       "resume",
+      "card_image_front",
+      "card_image_back",
     ];
 
     for (const field of requiredFields) {
-      if (!formData[field]) {
-        setSubmitError(`Please fill in the ${field.replace("_", " ")} field`);
+      const value = formData[field];
+      if (!value || (value instanceof File && value.size === 0)) {
+        setSubmitError(`Please fill in the ${field.replace(/_/g, ' ')} field`);
         return false;
       }
     }
 
-    // Validate file types
-    const resumeFile = formData.resume;
-    if (
-      resumeFile &&
-      ![
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      ].includes(resumeFile.type)
-    ) {
-      setSubmitError("Resume must be a PDF or Word document");
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setSubmitError("Please enter a valid email address");
       return false;
     }
 
     return true;
+  };
+
+  // FIXED: This function should return FormData object, not our FormData interface
+  const prepareFormData = async (): Promise<globalThis.FormData> => {
+    const submitData = new FormData();
+    
+    for (const key in formData) {
+      const value = formData[key as keyof FormData];
+      
+      if (value instanceof File) {
+        // For mobile or large files, ensure compression
+        if (value.type.startsWith('image/') && (isMobile || value.size > 2 * 1024 * 1024)) {
+          const compressedFile = await compressFile(value);
+          submitData.append(key, compressedFile);
+        } else {
+          submitData.append(key, value);
+        }
+      } else if (value !== null && value !== "") {
+        submitData.append(key, value as string);
+      }
+    }
+    
+    return submitData;
   };
 
   const handleAuthenticatedApply = async () => {
@@ -334,8 +396,8 @@ function OpportunityDetailPage() {
     setSubmitError("");
 
     try {
-      const response: AxiosResponse = await api.post(
-        `applicant/application/auth/${campaignId}`
+      const response = await apiCallWithRetry(() =>
+        api.post(`applicant/application/auth/${campaignId}`)
       );
 
       if (response.status === 200 || response.status === 201) {
@@ -350,7 +412,7 @@ function OpportunityDetailPage() {
           errorData.message || "Failed to submit application. Please try again."
         );
       } else {
-        setSubmitError("An unexpected error occurred. Please try again.");
+        setSubmitError("Network error. Please check your connection and try again.");
       }
     } finally {
       setSubmitting(false);
@@ -372,34 +434,24 @@ function OpportunityDetailPage() {
 
     setSubmitting(true);
 
-    // Check for authentication token
-    const token =
-      typeof window !== "undefined"
-        ? localStorage.getItem("access_token")
-        : null;
-    const isAuthenticated = !!token;
-
     try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+      const isAuthenticated = !!token;
+
       if (isAuthenticated) {
         // Authenticated user flow
-        const authSubmitData = new FormData();
-        // Authenticated users might only need to submit application-specific fields
-        authSubmitData.append("resume", formData.resume || "");
-        authSubmitData.append("certification", formData.certification || "");
-        authSubmitData.append("cover_letter", formData.cover_letter || "");
-        authSubmitData.append(
-          "available_start_date",
-          formData.available_start_date
-        );
-        authSubmitData.append("qualification", formData.qualification);
-        const response: AxiosResponse = await api.post(
-          `applicant/application/auth/${campaignId}`,
-          authSubmitData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
+        const authSubmitData = await prepareFormData();
+        const response = await apiCallWithRetry(() =>
+          api.post(
+            `applicant/application/auth/${campaignId}`,
+            authSubmitData,
+            {
+              headers: {
+                "Content-Type": "multipart/form-data",
+              },
+              timeout: isMobile ? 60000 : 30000,
+            }
+          )
         );
 
         if (response.status === 200 || response.status === 201) {
@@ -408,31 +460,19 @@ function OpportunityDetailPage() {
         }
       } else {
         // Unauthenticated user flow
-        const unauthSubmitData = new FormData();
-
-        for (const key in formData) {
-          const value = formData[key as keyof FormData];
-          if (value instanceof File) {
-            // Compress file before appending
-            const compressed = await compressFile(value);
-            unauthSubmitData.append(key, compressed);
-          } else if (value !== null && value !== "") {
-            unauthSubmitData.append(key, value as string);
-          }
-        }
-
-        // The post method in ApiService returns the full AxiosResponse
-        const response = await api.postWithResponse<{
-          success: boolean;
-          message: string;
-        }>(
-          `create/applicant/application/unauthenticated/${campaignId}`,
-          unauthSubmitData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
+        const unauthSubmitData = await prepareFormData();
+        
+        const response = await apiCallWithRetry(() =>
+          api.postWithResponse(
+            `create/applicant/application/unauthenticated/${campaignId}`,
+            unauthSubmitData,
+            {
+              headers: {
+                "Content-Type": "multipart/form-data",
+              },
+              timeout: isMobile ? 60000 : 30000,
+            }
+          )
         );
 
         if (response.status === 201 && response.data.success) {
@@ -445,19 +485,29 @@ function OpportunityDetailPage() {
       }
     } catch (error) {
       console.error("Error submitting application:", error);
-      if (error instanceof AxiosError && error.response) {
-        const errorData = error.response.data;
-        // Handle specific error for already applied
-        if (errorData.applicant && Array.isArray(errorData.applicant)) {
-          setSubmitError(errorData.applicant[0]);
-        } else {
-          setSubmitError(
-            errorData.message ||
-              "Failed to submit application. Please try again."
-          );
+      
+      // Enhanced error handling with mobile-specific messages
+      if (error instanceof AxiosError) {
+        if (error.code === 'ECONNABORTED') {
+          setSubmitError("Request timeout. Please check your connection and try again.");
+        } else if (error.response) {
+          const errorData = error.response.data;
+          if (errorData.applicant && Array.isArray(errorData.applicant)) {
+            setSubmitError(errorData.applicant[0]);
+          } else {
+            setSubmitError(
+              errorData.message || "Failed to submit application. Please try again."
+            );
+          }
+        } else if (error.request) {
+          setSubmitError("Network error. Please check your internet connection.");
         }
       } else {
-        setSubmitError("An unexpected error occurred. Please try again.");
+        setSubmitError(
+          isMobile 
+            ? "Submission failed. Please check your connection and file sizes, then try again."
+            : "An unexpected error occurred. Please try again."
+        );
       }
     } finally {
       setSubmitting(false);
@@ -527,6 +577,7 @@ function OpportunityDetailPage() {
                     width={800}
                     height={384}
                     className="w-full h-full object-cover"
+                    priority
                   />
                 ) : (
                   <div className="w-full h-full bg-gray-200 flex items-center justify-center">
@@ -733,6 +784,7 @@ function OpportunityDetailPage() {
                 <button
                   onClick={() => setShowApplicationForm(false)}
                   className="text-gray-400 hover:text-gray-600 transition-colors duration-300"
+                  disabled={submitting}
                 >
                   <i className="fas fa-times text-xl"></i>
                 </button>
@@ -745,6 +797,16 @@ function OpportunityDetailPage() {
                 <div className="mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
                   <i className="fas fa-exclamation-triangle mr-2"></i>
                   {submitError}
+                  {isMobile && (
+                    <div className="mt-2 text-sm">
+                      <strong>Mobile Tips:</strong>
+                      <ul className="list-disc list-inside mt-1">
+                        <li>Use Wi-Fi for better reliability</li>
+                        <li>Ensure files are under 10MB</li>
+                        <li>Keep the app open during submission</li>
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -909,7 +971,7 @@ function OpportunityDetailPage() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      PDF, DOC, DOCX files only
+                      PDF, DOC, DOCX files only (max 10MB)
                     </p>
                   </div>
 
@@ -924,6 +986,9 @@ function OpportunityDetailPage() {
                       accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      PDF, DOC, DOCX, JPG, PNG (max 10MB)
+                    </p>
                   </div>
 
                   <div>
@@ -935,9 +1000,12 @@ function OpportunityDetailPage() {
                       name="card_image_front"
                       onChange={(e) => handleFileUpload(e, "card_image_front")}
                       required
-                      accept=".jpg,.jpeg,.png"
+                      accept=".jpg,.jpeg,.png,.webp"
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      JPG, PNG, WebP (max 10MB)
+                    </p>
                   </div>
 
                   <div>
@@ -949,9 +1017,12 @@ function OpportunityDetailPage() {
                       name="card_image_back"
                       onChange={(e) => handleFileUpload(e, "card_image_back")}
                       required
-                      accept=".jpg,.jpeg,.png"
+                      accept=".jpg,.jpeg,.png,.webp"
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      JPG, PNG, WebP (max 10MB)
+                    </p>
                   </div>
 
                   <div>
@@ -962,9 +1033,12 @@ function OpportunityDetailPage() {
                       type="file"
                       name="profile_photo"
                       onChange={(e) => handleFileUpload(e, "profile_photo")}
-                      accept=".jpg,.jpeg,.png"
+                      accept=".jpg,.jpeg,.png,.webp"
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      JPG, PNG, WebP (max 10MB)
+                    </p>
                   </div>
                 </div>
               </div>
@@ -1001,7 +1075,7 @@ function OpportunityDetailPage() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      PDF, DOC, DOCX files only
+                      PDF, DOC, DOCX files only (max 10MB)
                     </p>
                   </div>
 
