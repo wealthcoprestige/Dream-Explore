@@ -6,7 +6,6 @@ import Image from "next/image";
 import Header from "./Header";
 import companyLogo from "../../../public/logo.png";
 import api from "../axios/axiosInsatance";
-import { compressFile } from "../utils/fileCompressor";
 
 // Define TypeScript interfaces
 interface CampaignData {
@@ -410,27 +409,15 @@ function OpportunityDetailPage() {
         // Unauthenticated user flow
         const unauthSubmitData = new FormData();
 
-        try {
-          for (const key in formData) {
-            const value = formData[key as keyof FormData];
-            if (value instanceof File) {
-              // Compress file before appending
-              const compressed = await compressFile(value);
-              unauthSubmitData.append(key, compressed);
-            } else if (value !== null && value !== "") {
-              unauthSubmitData.append(key, value as string);
-            }
+        for (const key in formData) {
+          const value = formData[key as keyof FormData];
+          if (value instanceof File) {
+            unauthSubmitData.append(key, value);
+          } else if (value !== null && value !== "") {
+            unauthSubmitData.append(key, value as string);
           }
-        } catch (compressionError) {
-          console.error("File compression failed:", compressionError);
-          setSubmitError(
-            "Failed to process uploaded files. Please try smaller or different files."
-          );
-          setSubmitting(false);
-          return; // Stop the submission process
         }
 
-        // The post method in ApiService returns the full AxiosResponse
         const response = await api.postWithResponse<{
           success: boolean;
           message: string;
